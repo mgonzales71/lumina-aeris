@@ -21,14 +21,92 @@
         select,input[type=password],input[type=text],input[type=date],textarea { -webkit-appearance:none; appearance:none; }
         .var-chip { display:inline-block; background:#EFF6FF; color:#2563EB; font-size:10px; font-weight:700; padding:5px 9px; border-radius:8px; cursor:pointer; -webkit-user-select:none; user-select:none; white-space:nowrap; transition:transform 0.1s; }
         .var-chip:active { transform:scale(0.92); }
-    </style>
+    
+
+    .app-brand { position: relative; display: inline-block; }
+    .app-name {
+      display: inline-block;
+      background: linear-gradient(90deg, #0ea5e9, #8b5cf6, #22c55e, #f59e0b, #0ea5e9);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: brandGradient 9s linear infinite;
+      filter: drop-shadow(0 1px 0 rgba(255,255,255,0.35));
+    }
+
+    .app-name-fx{
+      position:absolute;
+      inset:-10px -14px;
+      border-radius:14px;
+      pointer-events:none;
+      opacity:0;
+      mix-blend-mode: screen;
+    }
+
+    #app-brand.brand-intro .app-name-fx{
+      opacity:0.9;
+      animation: fxIntro 1.6s ease-out both;
+    }
+
+    @keyframes brandGradient {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 300% 50%; }
+    }
+
+    @keyframes fxIntro {
+      0% { transform: scale(0.98); filter: blur(6px); }
+      40% { transform: scale(1.02); filter: blur(0px); }
+      100% { transform: scale(1.00); filter: blur(0px); opacity: 0.0; }
+    }
+
+    body.wx-clear  .app-name-fx { opacity:0.35; background: radial-gradient(circle at 20% 30%, rgba(56,189,248,.55), transparent 55%),
+                                              radial-gradient(circle at 80% 50%, rgba(167,139,250,.45), transparent 60%); }
+
+    body.wx-cloud  .app-name-fx { opacity:0.35; background: radial-gradient(circle at 30% 40%, rgba(148,163,184,.55), transparent 60%),
+                                              radial-gradient(circle at 70% 55%, rgba(203,213,225,.45), transparent 60%); }
+
+    body.wx-rain   .app-name-fx { opacity:0.55; background: repeating-linear-gradient(115deg, rgba(59,130,246,0) 0,
+                                              rgba(59,130,246,.35) 8px, rgba(255,255,255,0) 16px);
+                                background-size: 200% 200%;
+                                animation: rainMove 2.1s linear infinite; }
+
+    @keyframes rainMove {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 140% 140%; }
+    }
+
+    body.wx-snow   .app-name-fx { opacity:0.45; background: radial-gradient(circle, rgba(255,255,255,.65) 0 1px, transparent 2px) 0 0 / 18px 18px,
+                                              radial-gradient(circle, rgba(255,255,255,.55) 0 1px, transparent 2px) 8px 10px / 22px 22px;
+                                animation: snowDrift 3.2s linear infinite; }
+
+    @keyframes snowDrift {
+      0% { background-position: 0 0, 8px 10px; }
+      100% { background-position: 0 40px, 8px 60px; }
+    }
+
+    body.wx-thunder .app-name-fx { opacity:0.45; background: radial-gradient(circle at 50% 50%, rgba(250,204,21,.8), transparent 55%);
+                                 animation: thunderFlicker 3.5s ease-in-out infinite; }
+
+    @keyframes thunderFlicker {
+      0%, 92%, 100% { opacity: 0.15; }
+      93% { opacity: 0.75; }
+      95% { opacity: 0.25; }
+      97% { opacity: 0.90; }
+    }
+</style>
 </head>
 <body class="pb-28">
 
 <!-- HEADER -->
 <header class="sticky top-0 z-40 glass border-b border-gray-200/60 px-4 pt-12 pb-3 flex justify-between items-center">
     <div>
-        <h1 class="text-2xl font-black tracking-tight text-gray-900">Lumina Aeris</h1>
+        <h1 class="text-2xl font-black tracking-tight text-gray-900 relative">
+          <span id="app-brand" class="app-brand">
+            <span id="app-name-fx" class="app-name-fx" aria-hidden="true"></span>
+            <span id="app-name" class="app-name">Lumina Aeris</span>
+          </span>
+        </h1>
         <p id="status-bar" class="text-[10px] font-bold uppercase tracking-widest text-blue-500">Ready</p>
     </div>
     <div class="flex items-center gap-2">
@@ -65,6 +143,22 @@
             <i data-lucide="zap" class="w-5 h-5"></i>
             Generate Wallpaper
         </button>
+
+      <div class="ios-card p-5 space-y-3">
+        <p class="text-10px font-black uppercase tracking-widest text-gray-400">Image Dimensions</p>
+
+        <select id="inp-dimensions" onchange="onDimChange(this.value)"
+          class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
+          <option value="this">This device</option>
+          <option value="iphone17pro">iPhone 17 Pro (1206×2622)</option>
+          <option value="iphone17promax">iPhone 17 Pro Max (1320×2868)</option>
+          <option value="ipad">iPad (2048×2732)</option>
+          <option value="desktop">Desktop 16:9 (1920×1080)</option>
+        </select>
+
+        <p id="dim-hint" class="text-10px text-gray-400">Default is this device unless overridden.</p>
+      </div>
+
 
         <div class="ios-card p-5">
             <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Context</p>
@@ -204,6 +298,13 @@
                     class="w-full py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
                     <i data-lucide="map-pin" class="w-4 h-4"></i> Manage POIs
                 </button>
+
+      <div>
+        <button onclick="openAboutModal()" class="w-full py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-0.98 transition-transform flex items-center justify-center gap-2">
+          <i data-lucide="info" class="w-4 h-4"></i>
+          About
+        </button>
+      </div>
             </div>
 
             <div class="ios-card p-5 space-y-4">
@@ -449,6 +550,44 @@
 
     </main>
 </div>
+
+  <!-- ABOUT MODAL full-screen -->
+  <div id="about-modal" class="fixed inset-0 z-50 hidden flex-col" style="background:#f2f2f7">
+    <header class="sticky top-0 z-40 glass border-b border-gray-200/60 px-4 pt-12 pb-3 flex justify-between items-center">
+      <h1 class="text-2xl font-black tracking-tight text-gray-900">About</h1>
+      <button onclick="closeAboutModal()" class="bg-gray-100 p-2.5 rounded-xl active:scale-95 transition-transform">
+        <i data-lucide="x" class="w-5 h-5 text-gray-600"></i>
+      </button>
+    </header>
+
+    <main class="max-w-lg mx-auto w-full px-4 pt-4 pb-28 space-y-4 overflow-y-auto">
+      <div class="ios-card p-5 space-y-3">
+        <p class="text-10px font-black uppercase tracking-widest text-gray-400">Lumina Aeris</p>
+        <p class="text-sm text-gray-600 leading-relaxed">
+          This web app generates a lock-screen wallpaper based on your location, current weather, time of day, moon phase,
+          and a rotating seasonal theme. It also caches points of interest (POIs) per location, includes a prompt builder,
+          and supports multiple image models and quality levels. (Replace this text later with your final About content.)
+        </p>
+      </div>
+
+      <div class="ios-card p-5 space-y-3">
+        <p class="text-10px font-black uppercase tracking-widest text-gray-400">Title animation & weather FX</p>
+        <p class="text-sm text-gray-600 leading-relaxed">
+          On page load, the app name does a lightweight animated color-and-light shimmer. After weather is fetched
+          (when you generate a wallpaper), subtle weather-themed effects may appear behind the title (clear / clouds / rain / snow / thunder).
+        </p>
+      </div>
+
+      <div class="ios-card p-5 space-y-3">
+        <p class="text-10px font-black uppercase tracking-widest text-gray-400">Image dimensions</p>
+        <p class="text-sm text-gray-600 leading-relaxed">
+          Default output dimensions use this device’s current screen size. You can override it with presets like iPhone 17 Pro,
+          iPhone 17 Pro Max, iPad, and Desktop 16:9.
+        </p>
+      </div>
+    </main>
+  </div>
+
 <script>
 // ─────────────────────────────────────────────────────────────
 //  APP CONFIG
@@ -605,6 +744,85 @@ const S = {
     blobUrl:         null
 };
 
+
+
+// ─────────────────────────────────────────────────────────────
+//  ADDED: About + Dimensions + Brand FX
+// ─────────────────────────────────────────────────────────────
+function openAboutModal() {
+  const modal = document.getElementById('about-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+}
+
+function closeAboutModal() {
+  const modal = document.getElementById('about-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.style.display = '';
+}
+
+function getDeviceDims() {
+  const w = Math.min(Math.round(window.screen.width * window.devicePixelRatio), 1440);
+  const h = Math.min(Math.round(window.screen.height * window.devicePixelRatio), 3120);
+  return { w, h };
+}
+
+function getSelectedDimensions() {
+  const sel = document.getElementById('inp-dimensions');
+  const preset = (sel && sel.value) || localStorage.getItem('lmdimpreset') || 'this';
+
+  if (preset === 'iphone17pro') return { w: 1206, h: 2622 };
+  if (preset === 'iphone17promax') return { w: 1320, h: 2868 };
+  if (preset === 'ipad') return { w: 2048, h: 2732 };
+  if (preset === 'desktop') return { w: 1920, h: 1080 };
+
+  return getDeviceDims();
+}
+
+function updateDimUI() {
+  const sel = document.getElementById('inp-dimensions');
+  if (!sel) return;
+
+  const d = getDeviceDims();
+  const opt = Array.from(sel.options).find(o => o.value === 'this');
+  if (opt) opt.textContent = `This device (${d.w}×${d.h})`;
+
+  const out = getSelectedDimensions();
+  const hint = document.getElementById('dim-hint');
+  if (hint) hint.textContent = `Current output: ${out.w}×${out.h}`;
+}
+
+function onDimChange(val) {
+  localStorage.setItem('lmdimpreset', val);
+  updateDimUI();
+}
+
+function startBrandIntro() {
+  const el = document.getElementById('app-brand');
+  if (!el) return;
+  el.classList.remove('brand-intro');
+  void el.offsetWidth;
+  el.classList.add('brand-intro');
+  setTimeout(() => el.classList.remove('brand-intro'), 1800);
+}
+
+function applyBrandWeatherFX(weatherCode) {
+  const body = document.body;
+  const classes = ['wx-clear','wx-cloud','wx-rain','wx-snow','wx-thunder','wx-fog'];
+  classes.forEach(c => body.classList.remove(c));
+
+  const code = Number(weatherCode);
+  if (Number.isNaN(code)) return;
+
+  if ([95,96,99].includes(code)) body.classList.add('wx-thunder');
+  else if ([71,73,75,77,85,86].includes(code)) body.classList.add('wx-snow');
+  else if ([51,53,55,61,63,65,66,67,80,81,82].includes(code)) body.classList.add('wx-rain');
+  else if ([45,48].includes(code)) body.classList.add('wx-fog');
+  else if ([2,3].includes(code)) body.classList.add('wx-cloud');
+  else body.classList.add('wx-clear');
+}
 // ─────────────────────────────────────────────────────────────
 //  INIT
 // ─────────────────────────────────────────────────────────────
@@ -623,6 +841,20 @@ const S = {
     if (!S.currentState) S.currentState = localStorage.getItem("lm_last_state") || "";
     fetchImageModels();
     lucide.createIcons();
+
+    const appNameEl = document.getElementById('app-name');
+    if (appNameEl) appNameEl.textContent = APP_NAME;
+    document.title = APP_NAME;
+
+    const dimSel = document.getElementById('inp-dimensions');
+    if (dimSel) dimSel.value = localStorage.getItem('lmdimpreset') || 'this';
+    updateDimUI();
+    window.addEventListener('resize', updateDimUI);
+
+    startBrandIntro();
+
+    const lastCode = parseInt(localStorage.getItem('lmweathercode') || '', 10);
+    if (!Number.isNaN(lastCode)) applyBrandWeatherFX(lastCode);
 })();
 
 
@@ -703,6 +935,8 @@ async function runEngine() {
         )).json();
 
         const cur         = wxData.current;
+      localStorage.setItem('lmweathercode', String(cur.weathercode));
+      applyBrandWeatherFX(cur.weathercode);
         const day         = wxData.daily;
         const weatherDesc = WMO_CODES[cur.weather_code] || `Conditions code ${cur.weather_code}`;
         const tempF       = Math.round(cur.temperature_2m);
@@ -816,8 +1050,9 @@ Format Rules:
 
         // 11 · Generate image
         setStatus("Painting image...", "text-purple-500");
-        const W = Math.min(Math.round(window.screen.width  * window.devicePixelRatio), 1440);
-        const H = Math.min(Math.round(window.screen.height * window.devicePixelRatio), 3120);
+        const dims = getSelectedDimensions();
+      const W = dims.w;
+      const H = dims.h;
 
         const imgURL = `https://gen.pollinations.ai/image/${encodeURIComponent(safePrompt)}`
             + `?model=${S.imageModel}`
