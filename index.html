@@ -94,6 +94,24 @@
       95% { opacity: 0.25; }
       97% { opacity: 0.90; }
     }
+
+
+        /* DARK MODE */
+        html.dark body { background:#0b0b0f; }
+        html.dark .glass { background:rgba(20,20,24,0.72); border-color:rgba(255,255,255,0.08); }
+        html.dark .ios-card { background:#14141a; box-shadow:0 1px 3px rgba(0,0,0,0.55),0 6px 24px rgba(0,0,0,0.35); }
+
+        html.dark .text-gray-900 { color:#f3f4f6; }
+        html.dark .text-gray-700 { color:#e5e7eb; }
+        html.dark .text-gray-600 { color:#d1d5db; }
+        html.dark .text-gray-400 { color:#9ca3af; }
+
+        html.dark .bg-gray-50 { background-color:#0f1016; }
+        html.dark .bg-gray-100 { background-color:#1c1c24; }
+        html.dark .border-gray-200 { border-color:rgba(255,255,255,0.10); }
+
+        html.dark input, html.dark select, html.dark textarea { color:#e5e7eb; }
+        html.dark ::placeholder { color:#6b7280; }
 </style>
 </head>
 <body class="pb-28">
@@ -277,6 +295,18 @@
             </div>
 
             <div>
+                <label class="env-label block mb-1.5">Appearance</label>
+                <select id="inp-appearance" onchange="setAppearance(this.value)"
+                    class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
+                    <option value="system">System</option>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                </select>
+                <p class="text-[10px] text-gray-400 mt-1.5">System follows your iOS appearance setting.</p>
+            </div>
+
+
+            <div>
                 <label class="env-label block mb-1.5">Quality (gptimage only)</label>
                 <select id="inp-quality" onchange="saveSetting('quality','lm_quality',this.value)"
                     class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
@@ -298,11 +328,10 @@
                     class="w-full py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
                     <i data-lucide="map-pin" class="w-4 h-4"></i> Manage POIs
                 </button>
-
-      <div>
-        <button onclick="openAboutModal()" class="w-full py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-0.98 transition-transform flex items-center justify-center gap-2">
-          <i data-lucide="info" class="w-4 h-4"></i>
-          About
+<div>
+        <button onclick="openAdvancedModal()" class="w-full py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-0.98 transition-transform flex items-center justify-center gap-2">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+          Advanced
         </button>
       </div>
             </div>
@@ -367,6 +396,16 @@
                     <i data-lucide="alert-triangle" class="w-4 h-4"></i> Reset App to Defaults
                 </button>
             </div>
+
+            <div class="mt-10">
+                <div>
+        <button onclick="openAboutModal()" class="w-full py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-0.98 transition-transform flex items-center justify-center gap-2">
+          <i data-lucide="info" class="w-4 h-4"></i>
+          About
+        </button>
+      </div>
+            </div>
+
     </section>
 
 </main>
@@ -588,11 +627,190 @@
     </main>
   </div>
 
-<script>
+  <!-- ADVANCED MODAL full-screen (Cloudflare Worker profile + Shortcut link) -->
+  <div id="advanced-modal" class="fixed inset-0 z-50 hidden flex-col" style="background:#f2f2f7">
+    <header class="sticky top-0 z-40 glass border-b border-gray-200/60 px-4 pt-12 pb-3 flex justify-between items-center">
+      <h1 class="text-2xl font-black tracking-tight text-gray-900">Advanced</h1>
+      <button onclick="closeAdvancedModal()" class="bg-gray-100 p-2.5 rounded-xl active:scale-95 transition-transform">
+        <i data-lucide="x" class="w-5 h-5 text-gray-600"></i>
+      </button>
+    </header>
+
+    <main class="max-w-lg mx-auto w-full px-4 pt-4 pb-28 space-y-4 overflow-y-auto">
+      <div class="ios-card p-5 space-y-3">
+        <p class="text-10px font-black uppercase tracking-widest text-gray-400">Cloudflare Worker profile</p>
+        <p class="text-sm text-gray-600 leading-relaxed">
+          Export your current settings into a Worker-hosted profile so iOS Shortcuts can call a single URL that returns an image (no UI).
+          Requirements: a Cloudflare Worker endpoint and a KV namespace bound to that Worker.
+        </p>
+      </div>
+
+      <div class="ios-card p-5 space-y-3">
+        <p class="text-10px font-black uppercase tracking-widest text-gray-400">Worker secrets (required)</p>
+        <p class="text-sm text-gray-600 leading-relaxed">
+          The Pollinations API key is not stored in the generated profile by default.
+          You must set it as a Cloudflare Worker secret named <span class="font-mono">POLLINATIONS_API_KEY</span>.
+        </p>
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 text-11px font-mono text-gray-700 whitespace-pre-wrap">
+POLLINATIONS_API_KEY = &lt;YOUR_POLLINATIONS_API_KEY&gt;
+ADMIN_TOKEN = &lt;YOUR_ADMIN_TOKEN&gt;   (optional, protects /profile)
+        </div>
+        <p class="text-10px text-gray-400">
+          If you use ADMIN_TOKEN, paste it below (or use it only in Cloudflare and leave this blank).
+        </p>
+      </div>
+
+
+      <div class="ios-card p-5 space-y-4">
+        <div>
+          <label class="env-label block mb-1.5">Worker Base URL</label>
+          <input type="text" id="adv-worker-base" placeholder="https://wallpaper.peakits.com"
+            class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
+          <p class="text-10px text-gray-400 mt-1.5">Example: https://wallpaper.peakits.com (no trailing slash).</p>
+        </div>
+
+        <div>
+          <label class="env-label block mb-1.5">Profile name</label>
+          <input type="text" id="adv-profile-name" placeholder="default"
+            class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
+          <p class="text-10px text-gray-400 mt-1.5">This becomes the KV key (example: default).</p>
+        </div>
+
+        <div>
+          <label class="env-label block mb-1.5">Optional admin token (recommended)</label>
+          <input type="password" id="adv-admin-token" placeholder="Bearer token for saving profiles"
+            class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
+          <p class="text-10px text-gray-400 mt-1.5">Only used to save/update profiles. Not used for generating images.</p>
+          <p class="text-10px text-red-400 mt-1">Security tip: prefer Worker secrets; avoid placing API keys in URLs or shared profile JSON.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <label class="text-xs font-semibold text-gray-600 flex items-center gap-2">
+            <input id="adv-inc-themes" type="checkbox" class="w-4 h-4" checked> Include themes
+          </label>
+          <label class="text-xs font-semibold text-gray-600 flex items-center gap-2">
+            <input id="adv-inc-poi" type="checkbox" class="w-4 h-4" checked> Include POI cache
+          </label>
+          <label class="text-xs font-semibold text-gray-600 flex items-center gap-2">
+            <input id="adv-inc-prompts" type="checkbox" class="w-4 h-4" checked> Include prompt templates
+          </label>
+          <label class="text-xs font-semibold text-gray-600 flex items-center gap-2">
+            <input id="adv-inc-styles" type="checkbox" class="w-4 h-4" checked> Include styles list
+          </label>
+          <label class="text-xs font-semibold text-gray-600 flex items-center gap-2">
+            <input id="adv-inc-apikey" type="checkbox" class="w-4 h-4"> Include API key in profile (not recommended)
+          </label>
+
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="generateWorkerProfileJSON()" class="flex-1 py-3.5 rounded-xl bg-blue-500 text-white font-semibold text-sm active:scale-0.98 transition-transform">Generate Profile JSON</button>
+          <button onclick="publishWorkerProfile()" class="flex-1 py-3.5 rounded-xl bg-green-50 text-green-600 font-semibold text-sm active:scale-0.98 transition-transform">Save to Worker</button>
+        </div>
+
+        <textarea id="adv-profile-json" rows="10" placeholder="Profile JSON will appear here..."
+          class="w-full bg-gray-50 rounded-xl p-3 text-11px font-mono border border-gray-200 outline-none focus:border-blue-400 resize-none"></textarea>
+
+        <div class="flex gap-3">
+          <button onclick="copyAdvancedText('adv-profile-json')" class="flex-1 py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-0.98 transition-transform">Copy JSON</button>
+          <button onclick="downloadAdvancedJSON()" class="flex-1 py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-0.98 transition-transform">Download JSON</button>
+        </div>
+
+        <p id="adv-status" class="text-10px font-bold uppercase tracking-widest text-gray-400">Ready</p>
+      </div>
+
+      <div class="ios-card p-5 space-y-4">
+        <p class="text-10px font-black uppercase tracking-widest text-gray-400">Worker code generator</p>
+        <p class="text-sm text-gray-600 leading-relaxed">
+          Enter your deployment details below and this app will generate a Worker script you can paste into Cloudflare.
+          Anything wrapped in &lt;LIKE_THIS&gt; is a placeholder you must replace in Cloudflare (usually as a secret or binding).
+        </p>
+
+        <div>
+          <label class="env-label block mb-1.5">Allowed Origin (GUI site)</label>
+          <input type="text" id="adv-worker-origin" placeholder="https://wallpaper.peakits.com"
+            class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
+          <p class="text-10px text-gray-400 mt-1.5">If your GUI is hosted at wallpaper.peakits.com, keep this as-is.</p>
+        </div>
+
+        <div>
+          <label class="env-label block mb-1.5">KV binding name</label>
+          <input type="text" id="adv-kv-binding" placeholder="PROFILE_KV"
+            class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
+          <p class="text-10px text-gray-400 mt-1.5">This must match your Worker KV binding in Cloudflare.</p>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="generateWorkerCode()" class="flex-1 py-3.5 rounded-xl bg-blue-50 text-blue-600 font-semibold text-sm active:scale-0.98 transition-transform">Generate Worker Code</button>
+          <button onclick="copyAdvancedText('adv-worker-generated')" class="flex-1 py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-0.98 transition-transform">Copy Code</button>
+        </div>
+
+        <textarea id="adv-worker-generated" rows="18" readonly
+          class="w-full bg-gray-50 rounded-xl p-3 text-11px font-mono border border-gray-200 outline-none resize-none"
+          placeholder="Generated Worker code will appear here..."></textarea>
+
+        <p class="text-10px text-gray-400">
+          Tip: You can keep the Pollinations API key out of profiles by setting it as a Worker secret.
+        </p>
+      </div>
+
+
+      <div class="ios-card p-5 space-y-3">
+        <p class="text-10px font-black uppercase tracking-widest text-gray-400">iOS Shortcut URL</p>
+        <p class="text-sm text-gray-600 leading-relaxed">
+          Your Shortcut should pass latitude/longitude at call time. This avoids country-specific parsing and works globally.
+        </p>
+        <button onclick="copyShortcutURLTemplate()" class="w-full py-3.5 rounded-xl bg-purple-50 text-purple-600 font-semibold text-sm active:scale-0.98 transition-transform">Copy Shortcut URL Template</button>
+        <textarea id="adv-shortcut-url" rows="3" class="w-full bg-gray-50 rounded-xl p-3 text-11px font-mono border border-gray-200 outline-none resize-none" placeholder="Shortcut URL will appear here..."></textarea>
+        <p class="text-10px text-gray-400">Tip: Replace &lt;LAT_VARIABLE&gt; and &lt;LON_VARIABLE&gt; using Shortcuts variables from “Get Current Location”.</p>
+      </div>
+
+      <div class="ios-card p-5 space-y-3">
+        <p class="text-10px font-black uppercase tracking-widest text-gray-400">Worker setup (guide)</p>
+        <p class="text-sm text-gray-600 leading-relaxed">
+          1) Create a Worker (Workers & Pages → Create).
+          2) Create/bind a KV namespace named PROFILE_KV.
+          3) Add secrets: POLLINATIONS_API_KEY (required), ADMIN_TOKEN (recommended).
+          4) Add routes: /profile (POST) to save profiles, /wallpaper (GET) to generate an image.
+        </p>
+        <p class="text-10px text-gray-400">Limits reminder: Workers Free 100,000 requests/day; KV Free 100,000 reads/day and 1,000 writes/day.</p>
+        <p class="text-xs font-semibold text-gray-700">Example Worker (copy/paste starter)</p>
+        <textarea id="adv-worker-example" rows="16" readonly
+          class="w-full bg-gray-50 rounded-xl p-3 text-11px font-mono border border-gray-200 outline-none resize-none"></textarea>
+        <button onclick="copyAdvancedText('adv-worker-example')" class="w-full py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-0.98 transition-transform">Copy Worker Code</button>
+      </div>
+
+    
+  <script>
 // ─────────────────────────────────────────────────────────────
 //  APP CONFIG
 // ─────────────────────────────────────────────────────────────
 const APP_NAME = "Lumina Aeris";  // ← rename the app here
+
+// ─────────────────────────────────────────────────────────────
+//  SAFE STORAGE WRAPPERS (prevents Safari/iframe localStorage crashes)
+// ─────────────────────────────────────────────────────────────
+function lsGet(key) {
+    try { return lsGet(key); } catch (e) { return null; }
+}
+function lsSet(key, val) {
+    try { lsSet(key, val); } catch (e) {}
+}
+function lsRemove(key) {
+    try { lsRemove(key); } catch (e) {}
+}
+function lsKeys() {
+    try { return lsKeys(); } catch (e) { return []; }
+}
+function safeJSONParse(str, fallback) {
+    try {
+        if (str == null || str === '' || str === 'null') return fallback;
+        return JSON.parse(str);
+    } catch (e) {
+        return fallback;
+    }
+}
+
 
 // ─────────────────────────────────────────────────────────────
 //  DEFAULTS
@@ -729,20 +947,56 @@ const WMO_CODES = {
 //  STATE
 // ─────────────────────────────────────────────────────────────
 const S = {
-    themes:          JSON.parse(localStorage.getItem("lm_themes")       || "null") || DEFAULT_THEMES,
-    styles:          JSON.parse(localStorage.getItem("lm_styles")       || "null") || DEFAULT_STYLES,
-    poiCache:        JSON.parse(localStorage.getItem("lm_poi")          || "{}"),
-    apiKey:          localStorage.getItem("lm_apikey")     || "",
-    style:           localStorage.getItem("lm_style")      || DEFAULT_STYLES[0],
-    imageModel:      localStorage.getItem("lm_imgmodel")   || "gptimage",
-    quality:         localStorage.getItem("lm_quality")    || "medium",
-    frequency:       parseInt(localStorage.getItem("lm_freq") || "0"),
-    promptDay:       localStorage.getItem("lm_prompt_day")   || DEFAULT_PROMPT_DAY,
-    promptNight:     localStorage.getItem("lm_prompt_night") || DEFAULT_PROMPT_NIGHT,
+    themes:          safeJSONParse(lsGet("lm_themes"), null) || DEFAULT_THEMES,
+    styles:          safeJSONParse(lsGet("lm_styles"), null) || DEFAULT_STYLES,
+    poiCache:        safeJSONParse(lsGet("lm_poi"), {}),
+    apiKey:          lsGet("lm_apikey")     || "",
+    style:           lsGet("lm_style")      || DEFAULT_STYLES[0],
+    imageModel:      lsGet("lm_imgmodel")   || "gptimage",
+    quality:         lsGet("lm_quality")    || "medium",
+    frequency:       parseInt(lsGet("lm_freq") || "0"),
+    promptDay:       lsGet("lm_prompt_day")   || DEFAULT_PROMPT_DAY,
+    promptNight:     lsGet("lm_prompt_night") || DEFAULT_PROMPT_NIGHT,
     activePromptTab: "day",
     timer:           null,
     blobUrl:         null
 };
+
+function repairStoredDefaults() {
+    try {
+        if (!Array.isArray(S.themes) || S.themes.length === 0) {
+            S.themes = DEFAULT_THEMES;
+            lsSet("lm_themes", JSON.stringify(DEFAULT_THEMES));
+        }
+        if (!Array.isArray(S.styles) || S.styles.length === 0) {
+            S.styles = DEFAULT_STYLES;
+            lsSet("lm_styles", JSON.stringify(DEFAULT_STYLES));
+        }
+        if (!S.style || !S.styles.includes(S.style)) {
+            S.style = (S.styles && S.styles[0]) ? S.styles[0] : DEFAULT_STYLES[0];
+            lsSet("lm_style", S.style);
+        }
+        if (typeof S.promptDay !== 'string' || !S.promptDay.trim()) {
+            S.promptDay = DEFAULT_PROMPT_DAY;
+            lsSet("lm_prompt_day", S.promptDay);
+        }
+        if (typeof S.promptNight !== 'string' || !S.promptNight.trim()) {
+            S.promptNight = DEFAULT_PROMPT_NIGHT;
+            lsSet("lm_prompt_night", S.promptNight);
+        }
+    } catch (e) {
+        console.warn('repairStoredDefaults failed:', e);
+    }
+}
+
+// Apply appearance as early as possible (even if init later errors)
+(function earlyApplyAppearance() {
+    try {
+        const mode = lsGet('lm_appearance') || 'system';
+        if (typeof applyAppearance === 'function') applyAppearance(mode);
+    } catch (e) {}
+})();
+
 
 
 
@@ -771,7 +1025,7 @@ function getDeviceDims() {
 
 function getSelectedDimensions() {
   const sel = document.getElementById('inp-dimensions');
-  const preset = (sel && sel.value) || localStorage.getItem('lmdimpreset') || 'this';
+  const preset = (sel && sel.value) || lsGet('lmdimpreset') || 'this';
 
   if (preset === 'iphone17pro') return { w: 1206, h: 2622 };
   if (preset === 'iphone17promax') return { w: 1320, h: 2868 };
@@ -795,7 +1049,7 @@ function updateDimUI() {
 }
 
 function onDimChange(val) {
-  localStorage.setItem('lmdimpreset', val);
+  lsSet('lmdimpreset', val);
   updateDimUI();
 }
 
@@ -823,22 +1077,381 @@ function applyBrandWeatherFX(weatherCode) {
   else if ([2,3].includes(code)) body.classList.add('wx-cloud');
   else body.classList.add('wx-clear');
 }
+
+
+// ─────────────────────────────────────────────────────────────
+//  ADVANCED (Cloudflare Worker profile + Shortcut URL)
+// ─────────────────────────────────────────────────────────────
+function openAdvancedModal() {
+  const modal = document.getElementById('advanced-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+
+  const base = lsGet('lm_worker_base') || 'https://wallpaper.peakits.com';
+  const name = lsGet('lm_worker_profile') || 'default';
+  const tok  = lsGet('lm_worker_token') || '';
+  const elBase = document.getElementById('adv-worker-base');
+  const elName = document.getElementById('adv-profile-name');
+  const elTok  = document.getElementById('adv-admin-token');
+  if (elBase) elBase.value = base;
+  if (elName) elName.value = name;
+  if (elTok)  elTok.value  = tok;
+
+  const ex = document.getElementById('adv-worker-example');
+  if (ex && !ex.value) ex.value = "// Cloudflare Worker starter (modules syntax)\n// REQUIRED SECRET: POLLINATIONS_API_KEY = <YOUR_POLLINATIONS_API_KEY>\n// OPTIONAL SECRET: ADMIN_TOKEN = <YOUR_ADMIN_TOKEN>\n// Bind KV as: PROFILE_KV\n\n// Set secrets via dashboard: Worker → Settings → Variables and Secrets → Add → Secret\n// Or via Wrangler: wrangler secret put POLLINATIONS_API_KEY\n//               wrangler secret put ADMIN_TOKEN\n\n// Cloudflare Worker starter (modules syntax)\n// Bind KV as: PROFILE_KV\n// Secrets: POLLINATIONS_API_KEY, ADMIN_TOKEN (optional)\n\nexport default {\n  async fetch(request, env, ctx) {\n    const url = new URL(request.url);\n\n    const corsHeaders = {\n      \"Access-Control-Allow-Origin\": \"*\",\n      \"Access-Control-Allow-Methods\": \"GET,POST,OPTIONS\",\n      \"Access-Control-Allow-Headers\": \"Content-Type, Authorization\",\n    };\n\n    if (request.method === \"OPTIONS\") {\n      return new Response(\"\", { status: 204, headers: corsHeaders });\n    }\n\n    if (url.pathname === \"/profile\" && request.method === \"POST\") {\n      const auth = request.headers.get(\"Authorization\") || \"\";\n      if (env.ADMIN_TOKEN && auth !== `Bearer ${env.ADMIN_TOKEN}`) {\n        return new Response(\"Unauthorized\", { status: 401, headers: corsHeaders });\n      }\n\n      const body = await request.json();\n      const name = (body.name || \"default\").toString();\n      const profile = body.profile || body;\n\n      await env.PROFILE_KV.put(name, JSON.stringify(profile));\n      return new Response(JSON.stringify({ ok: true, name }), {\n        headers: { ...corsHeaders, \"Content-Type\": \"application/json\" },\n      });\n    }\n\n    if (url.pathname === \"/wallpaper\" && request.method === \"GET\") {\n      const profileName = url.searchParams.get(\"profile\") || \"default\";\n      const lat = url.searchParams.get(\"lat\");\n      const lon = url.searchParams.get(\"lon\");\n      if (!lat || !lon) {\n        return new Response(\"Missing lat/lon\", { status: 400, headers: corsHeaders });\n      }\n\n      const raw = await env.PROFILE_KV.get(profileName);\n      if (!raw) return new Response(\"Profile not found\", { status: 404, headers: corsHeaders });\n      const P = JSON.parse(raw);\n\n      const wxURL = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&current=temperature2m,apparenttemperature,weathercode,cloudcover,isday&daily=sunrise,sunset,uv_index_max&timezone=auto&forecast_days=1&temperature_unit=fahrenheit`;\n      const wx = await fetch(wxURL).then(r => r.json());\n      const cur = wx.current;\n      const day = wx.daily;\n\n      const d = new Date();\n      const ord = (d.getMonth() + 1) * 100 + d.getDate();\n      const theme = (P.themes || []).find(t => ord >= t.Begin && ord <= t.End)?.Theme || \"General\";\n\n      let poiName = \"a beautiful scene\";\n      let poiDesc = \"A visually striking location with strong composition.\";\n      const key = (P.locationKey || \"global\");\n      const list = (P.poiCache && P.poiCache[key]) ? P.poiCache[key] : null;\n      if (Array.isArray(list) && list.length) {\n        const i = Math.abs((ord * 9301 + 49297) % list.length);\n        poiName = list[i].name || poiName;\n        poiDesc = list[i].description || poiDesc;\n      }\n\n      const timeOfDay = (cur && cur.is_day === 1) ? \"Daytime\" : \"Nighttime\";\n      const dateTime = new Date().toLocaleString(\"en-US\", { weekday:\"long\", month:\"long\", day:\"numeric\", year:\"numeric\", hour:\"2-digit\", minute:\"2-digit\" });\n      const weather = `Code ${cur.weathercode}, ${Math.round(cur.temperature2m)}F`;\n      const sunrise = (day && day.sunrise && day.sunrise[0]) ? new Date(day.sunrise[0]).toLocaleTimeString(\"en-US\", { hour:\"2-digit\", minute:\"2-digit\" }) : \"--\";\n      const sunset  = (day && day.sunset  && day.sunset[0])  ? new Date(day.sunset[0]).toLocaleTimeString(\"en-US\", { hour:\"2-digit\", minute:\"2-digit\" }) : \"--\";\n      const uv = (day && day.uv_index_max && day.uv_index_max[0] != null) ? day.uv_index_max[0] : 0;\n\n      const template = (timeOfDay === \"Daytime\") ? (P.promptDay || \"\") : (P.promptNight || \"\");\n      const style = P.style || \"Cinematic photography\";\n\n      const prompt = template\n        .replace(/style/g, style)\n        .replace(/poiname/g, poiName)\n        .replace(/poidesc/g, poiDesc)\n        .replace(/city/g, P.city || \"\")\n        .replace(/state/g, P.state || \"\")\n        .replace(/timeofday/g, timeOfDay)\n        .replace(/datetime/g, dateTime)\n        .replace(/weather/g, weather)\n        .replace(/sunrise/g, sunrise)\n        .replace(/sunset/g, sunset)\n        .replace(/uvindex/g, String(uv))\n        .replace(/theme/g, theme);\n\n      const safePrompt = prompt\n        .replace(/[^\u0000-\u007f]/g, \"\")\n        .replace(/%/g, \" percent \")\n        .replace(/\\s+/g, \" \")\n        .trim();\n\n      const model = P.imageModel || \"gptimage\";\n      const quality = P.quality || \"medium\";\n      const w = (P.dimensions && P.dimensions.w) ? P.dimensions.w : 1290;\n      const h = (P.dimensions && P.dimensions.h) ? P.dimensions.h : 2796;\n      const seed = Math.floor(Math.random() * 999999);\n\n      const imgURL = `https://gen.pollinations.ai/image/${encodeURIComponent(safePrompt)}?model=${encodeURIComponent(model)}&width=${w}&height=${h}&quality=${encodeURIComponent(quality)}&nologo=true&private=true&key=${encodeURIComponent(env.POLLINATIONS_API_KEY)}&seed=${seed}`;\n\n      const imgRes = await fetch(imgURL);\n      if (!imgRes.ok) {\n        return new Response(`Image upstream error: ${imgRes.status}`, { status: 502, headers: corsHeaders });\n      }\n      const buf = await imgRes.arrayBuffer();\n      return new Response(buf, {\n        headers: { ...corsHeaders, \"Content-Type\": imgRes.headers.get(\"Content-Type\") || \"image/png\" },\n      });\n    }\n\n    return new Response(\"Not found\", { status: 404, headers: corsHeaders });\n  }\n};";
+
+  generateWorkerProfileJSON(false);
+  lucide.createIcons();
+}
+
+function closeAdvancedModal() {
+  const modal = document.getElementById('advanced-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.style.display = '';
+}
+
+function setAdvStatus(msg, cls='text-gray-400') {
+  const el = document.getElementById('adv-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = `text-10px font-bold uppercase tracking-widest ${cls}`;
+}
+
+function readAdvFields() {
+  const base = (document.getElementById('adv-worker-base')?.value || '').trim().replace(/\/$/, '');
+  const name = (document.getElementById('adv-profile-name')?.value || 'default').trim() || 'default';
+  const tok  = (document.getElementById('adv-admin-token')?.value || '').trim();
+
+  lsSet('lm_worker_base', base);
+  lsSet('lm_worker_profile', name);
+  const origin = (document.getElementById('adv-worker-origin')?.value || '').trim();
+  const kv = (document.getElementById('adv-kv-binding')?.value || '').trim();
+  if (origin) lsSet('lm_worker_origin', origin);
+  if (kv) lsSet('lm_worker_kv', kv);
+
+  lsSet('lm_worker_token', tok);
+
+  return { base, name, tok, origin, kv };
+}
+
+function makeWorkerProfilePayload() {
+  const incThemes  = !!document.getElementById('adv-inc-themes')?.checked;
+  const incPoi     = !!document.getElementById('adv-inc-poi')?.checked;
+  const incPrompts = !!document.getElementById('adv-inc-prompts')?.checked;
+  const incStyles  = !!document.getElementById('adv-inc-styles')?.checked;
+  const incApiKey  = !!document.getElementById('adv-inc-apikey')?.checked;
+
+  const dims = getDeviceDims();
+
+  const P = {
+    app: APP_NAME,
+    version: 'worker-profile-v1',
+    createdAt: new Date().toISOString(),
+    style: S.style,
+    imageModel: S.imageModel,
+    quality: S.quality,
+    dimensions: { w: dims.w, h: dims.h, dpr: window.devicePixelRatio || 1 }
+  };
+
+  if (incApiKey && S.apiKey) {
+    P.apiKey = S.apiKey;
+  }
+
+  if (incPrompts) {
+    P.promptDay = S.promptDay;
+    P.promptNight = S.promptNight;
+  }
+  if (incThemes) P.themes = S.themes;
+  if (incStyles) P.styles = S.styles;
+  if (incPoi) P.poiCache = S.poiCache;
+
+  return P;
+}
+
+function generateWorkerProfileJSON(copyToClipboard=true) {
+  try {
+    readAdvFields();
+    const payload = makeWorkerProfilePayload();
+    const txt = JSON.stringify(payload, null, 2);
+    const ta = document.getElementById('adv-profile-json');
+    if (ta) ta.value = txt;
+    updateDimUI();
+    if (copyToClipboard) {
+      navigator.clipboard?.writeText(txt)
+        .then(() => setAdvStatus('Copied profile JSON', 'text-green-500'))
+        .catch(() => setAdvStatus('Profile JSON generated', 'text-gray-400'));
+    } else {
+      setAdvStatus('Profile JSON generated', 'text-gray-400');
+    }
+  } catch (e) {
+    console.error(e);
+    setAdvStatus('Error generating JSON', 'text-red-500');
+  }
+}
+
+function copyAdvancedText(textareaId) {
+  const ta = document.getElementById(textareaId);
+  if (!ta) return;
+  const txt = ta.value || '';
+  if (!txt) return;
+  navigator.clipboard?.writeText(txt)
+    .then(() => setAdvStatus('Copied', 'text-green-500'))
+    .catch(() => setAdvStatus('Copy failed', 'text-red-500'));
+}
+
+function downloadAdvancedJSON() {
+  const ta = document.getElementById('adv-profile-json');
+  if (!ta || !ta.value) return;
+  const blob = new Blob([ta.value], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const name = (document.getElementById('adv-profile-name')?.value || 'profile').trim() || 'profile';
+  a.href = url;
+  a.download = `${name}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  setAdvStatus('Downloaded JSON', 'text-green-500');
+}
+
+async function publishWorkerProfile() {
+  const { base, name, tok } = readAdvFields();
+  if (!base) return setAdvStatus('Set Worker Base URL first', 'text-red-500');
+
+  const profile = makeWorkerProfilePayload();
+  const body = { name, profile };
+
+  setAdvStatus('Saving profile to Worker...', 'text-blue-500');
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (tok) headers['Authorization'] = tok.startsWith('Bearer ') ? tok : `Bearer ${tok}`;
+
+    const res = await fetch(`${base}/profile`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body)
+    });
+
+    const txt = await res.text();
+    if (!res.ok) throw new Error(txt || `HTTP ${res.status}`);
+    setAdvStatus('Saved profile OK', 'text-green-500');
+  } catch (e) {
+    console.error(e);
+    setAdvStatus('Save failed (check Worker/CORS/token)', 'text-red-500');
+  }
+}
+
+function copyShortcutURLTemplate() {
+  const { base, name } = readAdvFields();
+  if (!base) return setAdvStatus('Set Worker Base URL first', 'text-red-500');
+  const u = `${base}/wallpaper?profile=${encodeURIComponent(name)}&lat=<LAT_VARIABLE>&lon=<LON_VARIABLE>`;
+  const ta = document.getElementById('adv-shortcut-url');
+  if (ta) ta.value = u;
+  navigator.clipboard?.writeText(u)
+    .then(() => setAdvStatus('Copied Shortcut URL template', 'text-green-500'))
+    .catch(() => setAdvStatus('Shortcut URL generated', 'text-gray-400'));
+}
+
+
+function sanitizeNoTrailingSlash(u) {
+  return (u || '').trim().replace(/\/$/, '');
+}
+
+function generateWorkerCode() {
+  const base = sanitizeNoTrailingSlash(document.getElementById('adv-worker-base')?.value || 'https://wallpaper.peakits.com');
+  const origin = (document.getElementById('adv-worker-origin')?.value || 'https://wallpaper.peakits.com').trim();
+  const kv = (document.getElementById('adv-kv-binding')?.value || 'PROFILE_KV').trim() || 'PROFILE_KV';
+
+  const code = `// Cloudflare Worker (modules syntax)
+// Custom domain: ${base.replace('https://','')}
+//
+// REQUIRED secrets (Worker → Settings → Variables and Secrets → Add → Secret)
+//   POLLINATIONS_API_KEY = <YOUR_POLLINATIONS_API_KEY>
+// OPTIONAL secret (recommended, protects POST /profile)
+//   ADMIN_TOKEN = <YOUR_ADMIN_TOKEN>
+// REQUIRED KV binding:
+//   ${kv}  (KV namespace binding name)
+//
+// Endpoints:
+//   POST ${base}/profile     (save profile JSON)
+//   GET  ${base}/wallpaper   (return image bytes; params: profile, lat, lon)
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    const allowedOrigin = ${json.dumps(origin)};
+    const reqOrigin = request.headers.get('Origin') || '';
+    const allowOrigin = (reqOrigin === allowedOrigin) ? reqOrigin : allowedOrigin;
+
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': allowOrigin,
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+
+    if (request.method === 'OPTIONS') {
+      return new Response('', { status: 204, headers: corsHeaders });
+    }
+
+    if (url.pathname === '/profile' && request.method === 'POST') {
+      const auth = request.headers.get('Authorization') || '';
+      if (env.ADMIN_TOKEN && auth !== \`Bearer \${env.ADMIN_TOKEN}\`) {
+        return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+      }
+
+      const body = await request.json();
+      const name = (body.name || 'default').toString();
+      const profile = body.profile || body;
+
+      await env[${json.dumps(kv)}].put(name, JSON.stringify(profile));
+      return new Response(JSON.stringify({ ok: true, name }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (url.pathname === '/wallpaper' && request.method === 'GET') {
+      const profileName = url.searchParams.get('profile') || 'default';
+      const lat = url.searchParams.get('lat');
+      const lon = url.searchParams.get('lon');
+      if (!lat || !lon) {
+        return new Response('Missing lat/lon', { status: 400, headers: corsHeaders });
+      }
+
+      const raw = await env[${json.dumps(kv)}].get(profileName);
+      if (!raw) return new Response('Profile not found', { status: 404, headers: corsHeaders });
+      const P = JSON.parse(raw);
+
+      const wxURL = \`https://api.open-meteo.com/v1/forecast?latitude=\${encodeURIComponent(lat)}&longitude=\${encodeURIComponent(lon)}&current=temperature2m,apparenttemperature,weathercode,cloudcover,isday&daily=sunrise,sunset,uv_index_max&timezone=auto&forecast_days=1&temperature_unit=fahrenheit\`;
+      const wx = await fetch(wxURL).then(r => r.json());
+      const cur = wx.current;
+      const day = wx.daily;
+
+      const d = new Date();
+      const ord = (d.getMonth() + 1) * 100 + d.getDate();
+      const theme = (P.themes || []).find(t => ord >= t.Begin && ord <= t.End)?.Theme || 'General';
+
+      let poiName = 'a beautiful scene';
+      let poiDesc = 'A visually striking location with strong composition.';
+      const key = (P.locationKey || 'global');
+      const list = (P.poiCache && P.poiCache[key]) ? P.poiCache[key] : null;
+      if (Array.isArray(list) && list.length) {
+        const i = Math.abs((ord * 9301 + 49297) % list.length);
+        poiName = list[i].name || poiName;
+        poiDesc = list[i].description || poiDesc;
+      }
+
+      const timeOfDay = (cur && cur.is_day === 1) ? 'Daytime' : 'Nighttime';
+      const dateTime = new Date().toLocaleString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      const weather = \`Code \${cur.weathercode}, \${Math.round(cur.temperature2m)}F\`;
+      const sunrise = (day && day.sunrise && day.sunrise[0]) ? new Date(day.sunrise[0]).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' }) : '--';
+      const sunset  = (day && day.sunset  && day.sunset[0])  ? new Date(day.sunset[0]).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' }) : '--';
+      const uv = (day && day.uv_index_max && day.uv_index_max[0] != null) ? day.uv_index_max[0] : 0;
+
+      const template = (timeOfDay === 'Daytime') ? (P.promptDay || '') : (P.promptNight || '');
+      const style = P.style || 'Cinematic photography';
+
+      const prompt = template
+        .replace(/style/g, style)
+        .replace(/poiname/g, poiName)
+        .replace(/poidesc/g, poiDesc)
+        .replace(/city/g, P.city || '')
+        .replace(/state/g, P.state || '')
+        .replace(/timeofday/g, timeOfDay)
+        .replace(/datetime/g, dateTime)
+        .replace(/weather/g, weather)
+        .replace(/sunrise/g, sunrise)
+        .replace(/sunset/g, sunset)
+        .replace(/uvindex/g, String(uv))
+        .replace(/theme/g, theme);
+
+      const safePrompt = prompt
+        .replace(/[^ -]/g, '')
+        .replace(/%/g, ' percent ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const model = P.imageModel || 'gptimage';
+      const quality = P.quality || 'medium';
+      const w = (P.dimensions && P.dimensions.w) ? P.dimensions.w : 1290;
+      const h = (P.dimensions && P.dimensions.h) ? P.dimensions.h : 2796;
+      const seed = Math.floor(Math.random() * 999999);
+
+      const imgURL = \`https://gen.pollinations.ai/image/\${encodeURIComponent(safePrompt)}?model=\${encodeURIComponent(model)}&width=\${w}&height=\${h}&quality=\${encodeURIComponent(quality)}&nologo=true&private=true&key=\${encodeURIComponent(env.POLLINATIONS_API_KEY)}&seed=\${seed}\`;
+
+      const imgRes = await fetch(imgURL);
+      if (!imgRes.ok) {
+        return new Response(\`Image upstream error: \${imgRes.status}\`, { status: 502, headers: corsHeaders });
+      }
+      const buf = await imgRes.arrayBuffer();
+      return new Response(buf, {
+        headers: { ...corsHeaders, 'Content-Type': imgRes.headers.get('Content-Type') || 'image/png' },
+      });
+    }
+
+    return new Response('Not found', { status: 404, headers: corsHeaders });
+  }
+};`;
+
+  const ta = document.getElementById('adv-worker-generated');
+  if (ta) ta.value = code;
+  setAdvStatus('Worker code generated', 'text-green-500');
+}
+
+
+function applyAppearance(mode) {
+    const root = document.documentElement;
+    let sysDark = false;
+    if (window.matchMedia) {
+        try { sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) {}
+    }
+    const useDark = (mode === 'dark') || (mode === 'system' && sysDark);
+    root.classList.toggle('dark', !!useDark);
+}
+
+function setAppearance(mode) {
+    lsSet('lm_appearance', mode);
+    applyAppearance(mode);
+}
+
+(function watchSystemAppearance() {
+    if (!window.matchMedia) return;
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = () => {
+        const mode = lsGet('lm_appearance') || 'system';
+        if (mode === 'system') applyAppearance('system');
+    };
+    if (mql.addEventListener) mql.addEventListener('change', handler);
+    else if (mql.addListener) mql.addListener(handler);
+})();
 // ─────────────────────────────────────────────────────────────
 //  INIT
 // ─────────────────────────────────────────────────────────────
 (function init() {
+    // INIT_TRY_WRAP
+    repairStoredDefaults();
+    try {
+
     document.getElementById("inp-apikey").value    = S.apiKey;
     document.getElementById("inp-imgmodel").value  = S.imageModel;
     document.getElementById("inp-quality").value   = S.quality;
     document.getElementById("inp-frequency").value = S.frequency;
+
+    const ap = lsGet("lm_appearance") || "system";
+    const apSel = document.getElementById("inp-appearance");
+    if (apSel) apSel.value = ap;
+    applyAppearance(ap);
     renderStyleSelect();
     renderStyleList();
     renderVarChips();
     refreshPromptTextarea();
     refreshCacheInfo();
     if (S.frequency > 0) setFrequency(S.frequency, false);
-    if (!S.currentCity) S.currentCity = localStorage.getItem("lm_last_city") || "";
-    if (!S.currentState) S.currentState = localStorage.getItem("lm_last_state") || "";
+    if (!S.currentCity) S.currentCity = lsGet("lm_last_city") || "";
+    if (!S.currentState) S.currentState = lsGet("lm_last_state") || "";
     fetchImageModels();
     lucide.createIcons();
 
@@ -847,14 +1460,22 @@ function applyBrandWeatherFX(weatherCode) {
     document.title = APP_NAME;
 
     const dimSel = document.getElementById('inp-dimensions');
-    if (dimSel) dimSel.value = localStorage.getItem('lmdimpreset') || 'this';
+    if (dimSel) dimSel.value = lsGet('lmdimpreset') || 'this';
     updateDimUI();
     window.addEventListener('resize', updateDimUI);
 
     startBrandIntro();
 
-    const lastCode = parseInt(localStorage.getItem('lmweathercode') || '', 10);
+    const lastCode = parseInt(lsGet('lmweathercode') || '', 10);
     if (!Number.isNaN(lastCode)) applyBrandWeatherFX(lastCode);
+
+    } catch (e) {
+        console.error('Init error:', e);
+        try {
+            const s = document.getElementById('status');
+            if (s) s.textContent = 'Init error (see console)';
+        } catch (e2) {}
+    }
 })();
 
 
@@ -919,9 +1540,9 @@ async function runEngine() {
             S.currentCity = city;
             S.currentState = state;
             S.locationLabel = locationLabel;
-            localStorage.setItem("lm_last_city", city);
-            localStorage.setItem("lm_last_state", state);
-            localStorage.setItem("lm_last_country", country);
+            lsSet("lm_last_city", city);
+            lsSet("lm_last_state", state);
+            lsSet("lm_last_country", country);
         }
 
         // 3 · Weather via Open-Meteo (free, no key)
@@ -935,7 +1556,7 @@ async function runEngine() {
         )).json();
 
         const cur         = wxData.current;
-      localStorage.setItem('lmweathercode', String(cur.weathercode));
+      lsSet('lmweathercode', String(cur.weathercode));
       applyBrandWeatherFX(cur.weathercode);
         const day         = wxData.daily;
         const weatherDesc = WMO_CODES[cur.weather_code] || `Conditions code ${cur.weather_code}`;
@@ -1029,7 +1650,7 @@ Format Rules:
                 throw new Error("POI response was not a valid JSON array -- open console to inspect");
 
             S.poiCache[cacheKey] = pois;
-            localStorage.setItem("lm_poi", JSON.stringify(S.poiCache));
+            lsSet("lm_poi", JSON.stringify(S.poiCache));
             refreshCacheInfo();
         }
 
@@ -1312,8 +1933,8 @@ function insertVar(variable) {
 
 function savePrompt() {
     updatePromptState();
-    localStorage.setItem("lm_prompt_day",   S.promptDay);
-    localStorage.setItem("lm_prompt_night", S.promptNight);
+    lsSet("lm_prompt_day",   S.promptDay);
+    lsSet("lm_prompt_night", S.promptNight);
     alert("Prompts saved.");
 }
 
@@ -1321,10 +1942,10 @@ function resetPrompt() {
     if (!confirm("Reset to default prompt for " + S.activePromptTab + "?")) return;
     if (S.activePromptTab === "day") {
         S.promptDay = DEFAULT_PROMPT_DAY;
-        localStorage.setItem("lm_prompt_day", S.promptDay);
+        lsSet("lm_prompt_day", S.promptDay);
     } else {
         S.promptNight = DEFAULT_PROMPT_NIGHT;
-        localStorage.setItem("lm_prompt_night", S.promptNight);
+        lsSet("lm_prompt_night", S.promptNight);
     }
     refreshPromptTextarea();
 }
@@ -1356,7 +1977,7 @@ function addStyle() {
     if (!val) return;
     if (S.styles.includes(val)) { alert("Style already exists."); return; }
     S.styles.push(val);
-    localStorage.setItem("lm_styles", JSON.stringify(S.styles));
+    lsSet("lm_styles", JSON.stringify(S.styles));
     inp.value = "";
     renderStyleSelect();
     renderStyleList();
@@ -1367,8 +1988,8 @@ function deleteStyle(i) {
     if (!confirm(`Delete "${S.styles[i]}"?`)) return;
     if (S.style === S.styles[i]) S.style = S.styles[0] === S.styles[i] ? S.styles[1] : S.styles[0];
     S.styles.splice(i, 1);
-    localStorage.setItem("lm_styles", JSON.stringify(S.styles));
-    localStorage.setItem("lm_style",  S.style);
+    lsSet("lm_styles", JSON.stringify(S.styles));
+    lsSet("lm_style",  S.style);
     renderStyleSelect();
     renderStyleList();
 }
@@ -1406,13 +2027,13 @@ function showTab(name) {
 
 function saveSetting(key, lsKey, val) {
     S[key] = val;
-    localStorage.setItem(lsKey, val);
+    lsSet(lsKey, val);
 }
 
 function setFrequency(val, save = true) {
     const mins = parseInt(val);
     S.frequency = mins;
-    if (save) localStorage.setItem("lm_freq", mins);
+    if (save) lsSet("lm_freq", mins);
     if (S.timer) clearInterval(S.timer);
     if (mins > 0) S.timer = setInterval(runEngine, mins * 60000);
 }
@@ -1446,7 +2067,7 @@ function refreshCacheInfoModal() {
 function clearPOICache() {
     if (!confirm("Clear all cached POI data?")) return;
     S.poiCache = {};
-    localStorage.removeItem("lm_poi");
+    lsRemove("lm_poi");
     refreshCacheInfo();
     const sel = document.getElementById("poi-city-sel");
     if (sel) sel.innerHTML = "<option value=''>No cached locations yet</option>";
@@ -1479,7 +2100,7 @@ function renderThemes() {
 function deleteTheme(begin, end) {
     if (!confirm("Delete this theme?")) return;
     S.themes = S.themes.filter(t => !(t.Begin === begin && t.End === end));
-    localStorage.setItem("lm_themes", JSON.stringify(S.themes));
+    lsSet("lm_themes", JSON.stringify(S.themes));
     renderThemes();
 }
 
@@ -1493,7 +2114,7 @@ function saveNewTheme() {
     if (!name || !start || !end) { alert("All three fields are required."); return; }
     const toOrd = s => { const d = new Date(s + "T12:00:00"); return (d.getMonth()+1)*100 + d.getDate(); };
     S.themes.push({ Begin: toOrd(start), End: toOrd(end), Theme: name });
-    localStorage.setItem("lm_themes", JSON.stringify(S.themes));
+    lsSet("lm_themes", JSON.stringify(S.themes));
     document.getElementById("modal-name").value  = "";
     document.getElementById("modal-start").value = "";
     document.getElementById("modal-end").value   = "";
@@ -1518,7 +2139,7 @@ function importThemes() {
                 throw new Error("Each entry needs Begin (number), End (number), Theme (string)");
         });
         S.themes = parsed;
-        localStorage.setItem("lm_themes", JSON.stringify(S.themes));
+        lsSet("lm_themes", JSON.stringify(S.themes));
         document.getElementById("inp-import").value = "";
         alert(`Imported ${parsed.length} themes successfully`);
         renderThemes();
@@ -1748,9 +2369,9 @@ async function generatePoiPreview() {
 
 
 function resetApp() {
-    if (!confirm("Reset Lumina Aeris? This will clear all settings, custom themes, and cached POIs.")) return;
-    Object.keys(localStorage).filter(k => k.startsWith("lm_")).forEach(k => localStorage.removeItem(k));
-    location.reload();
+    // Avoid confirm() so reset works in embedded viewers.
+    lsKeys().filter(k => k.startsWith("lm_")).forEach(k => lsRemove(k));
+    try { location.reload(); } catch (e) {}
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1758,7 +2379,7 @@ function resetApp() {
 // ─────────────────────────────────────────────────────────────
 function setLocationMode(mode) {
     S.locationMode = mode;
-    localStorage.setItem("lm_location_mode", mode);
+    lsSet("lm_location_mode", mode);
     document.getElementById("locmode-current").className = mode === "current" ?
         "flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold bg-blue-500 text-white transition-all" :
         "flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold text-gray-400 transition-all";
@@ -1768,8 +2389,8 @@ function setLocationMode(mode) {
     document.getElementById("custom-location-fields").classList.toggle("hidden", mode !== "custom");
     if (mode === "current") {
         delete S.customLat; delete S.customLon;
-        localStorage.removeItem("lm_custom_lat");
-        localStorage.removeItem("lm_custom_lon");
+        lsRemove("lm_custom_lat");
+        lsRemove("lm_custom_lon");
     }
 }
 
@@ -1794,11 +2415,11 @@ async function validateCustomLocation() {
         S.customCity = loc.display_name.split(", ")[0];
         S.customState = loc.address.state || "";
         S.customCountry = loc.address.country || "";
-        localStorage.setItem("lm_custom_lat", S.customLat);
-        localStorage.setItem("lm_custom_lon", S.customLon);
-        localStorage.setItem("lm_custom_city", S.customCity);
-        localStorage.setItem("lm_custom_state", S.customState);
-        localStorage.setItem("lm_custom_country", S.customCountry);
+        lsSet("lm_custom_lat", S.customLat);
+        lsSet("lm_custom_lon", S.customLon);
+        lsSet("lm_custom_city", S.customCity);
+        lsSet("lm_custom_state", S.customState);
+        lsSet("lm_custom_country", S.customCountry);
         alert(`✓ Validated: ${S.customCity}, ${S.customState || S.customCountry}`);
     } catch(e) {
         alert("Validation failed: " + e.message);
@@ -1869,7 +2490,7 @@ function savePoiEntry() {
     } else {
         pois.push({ name, description: desc });
     }
-    localStorage.setItem("lm_poi", JSON.stringify(S.poiCache));
+    lsSet("lm_poi", JSON.stringify(S.poiCache));
     closePoiForm();
     renderPoiList(_poiEditCity);
     refreshCacheInfoModal();
@@ -1883,7 +2504,7 @@ function deletePoiEntry(index) {
     if (!confirm(`Delete "${poi.name}"?`)) return;
     S.poiCache[_poiEditCity].splice(index, 1);
     if (S.poiCache[_poiEditCity].length === 0) delete S.poiCache[_poiEditCity];
-    localStorage.setItem("lm_poi", JSON.stringify(S.poiCache));
+    lsSet("lm_poi", JSON.stringify(S.poiCache));
     renderPoiList(_poiEditCity);
     refreshCacheInfoModal();
     // Re-populate city selector in case city was removed
@@ -1929,7 +2550,7 @@ async function fetchImageModels() {
 
         if (!mNames.includes(S.imageModel)) {
             S.imageModel = mNames[0];
-            localStorage.setItem("lm_imgmodel", S.imageModel);
+            lsSet("lm_imgmodel", S.imageModel);
             sel.value = S.imageModel;
         }
     } catch (e) {
