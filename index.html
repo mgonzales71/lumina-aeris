@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lumina Aeris</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background:#f2f2f7; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+        .glass { background:rgba(255,255,255,0.88); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+        .ios-card { background:white; border-radius:1.25rem; box-shadow:0 1px 3px rgba(0,0,0,0.06),0 4px 14px rgba(0,0,0,0.04); }
+        .tab-active { color:#007AFF; }
+        .tab-inactive { color:#8E8E93; }
+        #img-preview { transition:opacity 0.6s ease; }
+        #img-overlay { transition:opacity 0.5s ease; }
+        .env-row { display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px solid #f2f2f7; }
+        .env-row:last-child { border-bottom:none; }
+        .env-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#8E8E93; padding-top:1px; flex-shrink:0; }
+        .env-value { font-size:13px; font-weight:500; color:#1c1c1e; text-align:right; max-width:65%; word-break:break-word; }
+        select,input[type=password],input[type=text],input[type=date],textarea { -webkit-appearance:none; appearance:none; }
+        .var-chip { display:inline-block; background:#EFF6FF; color:#2563EB; font-size:10px; font-weight:700; padding:5px 9px; border-radius:8px; cursor:pointer; -webkit-user-select:none; user-select:none; white-space:nowrap; transition:transform 0.1s; }
+        .var-chip:active { transform:scale(0.92); }
+    </style>
+</head>
+<body class="pb-28">
+
+<!-- HEADER -->
+<header class="sticky top-0 z-40 glass border-b border-gray-200/60 px-4 pt-12 pb-3 flex justify-between items-center">
+    <div>
+        <h1 class="text-2xl font-black tracking-tight text-gray-900">Lumina Aeris</h1>
+        <p id="status-bar" class="text-[10px] font-bold uppercase tracking-widest text-blue-500">Ready</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <div id="spinner" class="hidden w-5 h-5 border-[2.5px] border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <button id="btn-download" onclick="downloadImage()" class="hidden bg-gray-100 p-2.5 rounded-xl active:scale-95 transition-transform">
+            <i data-lucide="download" class="w-5 h-5 text-gray-600"></i>
+        </button>
+    </div>
+</header>
+
+<main class="max-w-lg mx-auto px-4 pt-4 space-y-4">
+
+    <!-- HOME TAB -->
+    <section id="tab-home" class="space-y-4">
+
+        <div class="relative w-full aspect-[9/19.5] ios-card overflow-hidden bg-gray-100">
+            <img id="img-preview" src="" class="w-full h-full object-cover opacity-0" alt="">
+            <div id="img-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-300 gap-3">
+                <i data-lucide="image" class="w-16 h-16"></i>
+                <span class="text-sm font-medium">No wallpaper yet</span>
+            </div>
+            <div id="img-overlay" class="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent flex flex-col justify-end p-6 text-white opacity-0 pointer-events-none">
+                <div class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md w-fit px-3 py-1 rounded-full text-[10px] font-bold uppercase mb-3">
+                    <i data-lucide="sparkles" class="w-3 h-3"></i>
+                    <span id="lbl-theme">--</span>
+                </div>
+                <h2 id="lbl-poi-name" class="text-2xl font-black leading-tight drop-shadow">--</h2>
+                <p id="lbl-poi-desc" class="text-xs opacity-80 line-clamp-2 mt-1">--</p>
+            </div>
+        </div>
+
+        <button onclick="runEngine()" id="btn-run"
+            class="w-full bg-blue-500 text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-2 text-base shadow-lg shadow-blue-200 active:scale-[0.98] transition-transform">
+            <i data-lucide="zap" class="w-5 h-5"></i>
+            Generate Wallpaper
+        </button>
+
+        <div class="ios-card p-5">
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Context</p>
+            <div class="env-row"><span class="env-label">Location</span><span class="env-value" id="ctx-location">--</span></div>
+            <div class="env-row"><span class="env-label">Weather</span><span class="env-value" id="ctx-weather">--</span></div>
+            <div class="env-row"><span class="env-label">Temp</span><span class="env-value" id="ctx-temp">--</span></div>
+            <div class="env-row"><span class="env-label">UV Index</span><span class="env-value" id="ctx-uv">--</span></div>
+            <div class="env-row"><span class="env-label">Sunrise</span><span class="env-value" id="ctx-sunrise">--</span></div>
+            <div class="env-row"><span class="env-label">Sunset</span><span class="env-value" id="ctx-sunset">--</span></div>
+            <div class="env-row"><span class="env-label">Time of Day</span><span class="env-value" id="ctx-timeofday">--</span></div>
+            <div class="env-row"><span class="env-label">Moon Phase</span><span class="env-value" id="ctx-moon">--</span></div>
+            <div class="env-row"><span class="env-label">Illumination</span><span class="env-value" id="ctx-illumination">--</span></div>
+            <div class="env-row"><span class="env-label">Moonrise / Set</span><span class="env-value" id="ctx-moonriseset">--</span></div>
+            <div class="env-row"><span class="env-label">Theme</span><span class="env-value" id="ctx-theme">--</span></div>
+            <div class="env-row"><span class="env-label">POI</span><span class="env-value" id="ctx-poi">--</span></div>
+        </div>
+
+        <div class="ios-card p-5">
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Last Prompt Sent</p>
+            <p id="ctx-prompt" class="text-[11px] text-gray-500 leading-relaxed font-mono whitespace-pre-wrap">Generate a wallpaper to see the prompt here.</p>
+        </div>
+
+    </section>
+
+    <!-- THEMES TAB -->
+    <section id="tab-themes" class="hidden space-y-4">
+        <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-black">Themes</h2>
+            <div class="flex gap-2">
+                <button onclick="openThemeModal()" class="bg-blue-500 text-white px-4 py-2.5 rounded-xl flex items-center gap-1.5 text-sm font-semibold active:scale-95 transition-transform">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Add
+                </button>
+            </div>
+        </div>
+        <div id="theme-list" class="space-y-2"></div>
+
+        <!-- Export Themes -->
+        <div class="ios-card p-5 space-y-3">
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Export Themes</p>
+            <p class="text-[11px] text-gray-500 leading-relaxed">Download your themes as a JSON file to back up or share them.</p>
+            <button onclick="exportThemes()"
+                class="w-full py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+                <i data-lucide="share-2" class="w-4 h-4"></i> Export Themes JSON
+            </button>
+        </div>
+
+        <!-- Import Themes JSON -->
+        <div class="ios-card p-5 space-y-3">
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Import Themes JSON</p>
+            <textarea id="inp-import" rows="5" placeholder='[{"Begin":101,"End":103,"Theme":"New Years"}]'
+                class="w-full bg-gray-50 rounded-xl p-3 text-[11px] font-mono border border-gray-200 outline-none focus:border-blue-400 resize-none"></textarea>
+            <button onclick="importThemes()"
+                class="w-full py-3.5 rounded-xl bg-blue-50 text-blue-500 font-semibold text-sm active:scale-[0.98] transition-transform">Import JSON</button>
+        </div>
+
+    </section>
+
+    <!-- PROMPT BUILDER TAB -->
+    <section id="tab-prompt" class="hidden space-y-4">
+        <h2 class="text-2xl font-black">Prompt Builder</h2>
+
+        <div class="ios-card p-1.5 flex gap-1.5">
+            <button onclick="switchPromptTab('day')" id="ptab-day"
+                class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-blue-500 text-white transition-all">
+                Day Prompt
+            </button>
+            <button onclick="switchPromptTab('night')" id="ptab-night"
+                class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-400 transition-all">
+                Night Prompt
+            </button>
+        </div>
+
+        <div class="ios-card p-4">
+            <p class="env-label mb-3">Tap a variable to insert it at your cursor</p>
+            <div id="var-chips" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <div class="ios-card p-4">
+            <textarea id="prompt-textarea" rows="18"
+                oninput="updatePromptState()"
+                class="w-full bg-gray-50 rounded-xl p-3 text-[11px] font-mono border border-gray-200 outline-none focus:border-blue-400 resize-none leading-relaxed"></textarea>
+        </div>
+
+        <div class="flex gap-3 pb-4">
+            <button onclick="resetPrompt()"
+                class="flex-1 py-4 rounded-2xl font-semibold text-gray-500 ios-card active:scale-[0.98] transition-transform text-sm">
+                Reset Default
+            </button>
+            <button onclick="savePrompt()"
+                class="flex-1 py-4 rounded-2xl font-semibold text-white bg-blue-500 active:scale-[0.98] transition-transform text-sm shadow-lg shadow-blue-200">
+                Save
+            </button>
+        </div>
+    </section>
+
+    <!-- SETTINGS TAB -->
+    <section id="tab-settings" class="hidden space-y-4">
+        <h2 class="text-2xl font-black">Settings</h2>
+
+        <div class="ios-card p-5 space-y-5">
+
+            <div>
+                <label class="env-label block mb-1.5">Pollinations API Key</label>
+                <input type="password" id="inp-apikey" placeholder="Enter your API key..."
+                    oninput="saveSetting('apiKey','lm_apikey',this.value)"
+                    class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50">
+                <p class="text-[10px] text-gray-400 mt-1.5">Get yours at <b>enter.pollinations.ai</b></p>
+            </div>
+
+            <div>
+                <label class="env-label block mb-1.5">Image Model</label>
+                <select id="inp-imgmodel" onchange="saveSetting('imageModel','lm_imgmodel',this.value)"
+                    class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
+                    <option value="">Loading models…</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="env-label block mb-1.5">Quality (gptimage only)</label>
+                <select id="inp-quality" onchange="saveSetting('quality','lm_quality',this.value)"
+                    class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
+                    <option value="medium">Medium -- Faster</option>
+                    <option value="high">High</option>
+                    <option value="hd">HD -- Slowest</option>
+                </select>
+            </div>
+
+            <div>
+                <button onclick="openStylesModal()"
+                    class="w-full py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+                    <i data-lucide="palette" class="w-4 h-4"></i> Manage Styles
+                </button>
+            </div>
+
+            <div>
+                <button onclick="openPoiModal()"
+                    class="w-full py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i> Manage POIs
+                </button>
+            </div>
+
+            <div class="ios-card p-5 space-y-4">
+                <label class="env-label block mb-2">Location Mode</label>
+                <div class="flex gap-1 bg-gray-100 rounded-xl p-1.5">
+                    <button onclick="setLocationMode('current')" id="locmode-current"
+                        class="flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold bg-blue-500 text-white transition-all">Current</button>
+                    <button onclick="setLocationMode('custom')" id="locmode-custom"
+                        class="flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold text-gray-400 transition-all">Custom</button>
+                </div>
+                <div id="custom-location-fields" class="space-y-3 hidden">
+                    <div>
+                        <label class="env-label block mb-1.5">City</label>
+                        <input type="text" id="custom-city" placeholder="e.g. Portland"
+                            class="w-full bg-gray-50 rounded-xl p-3 text-sm border border-gray-200 outline-none focus:border-blue-400"
+                            onchange="saveSetting('customCity', 'lm_custom_city', this.value)">
+                    </div>
+                    <div>
+                        <label class="env-label block mb-1.5">Region / Country</label>
+                        <input type="text" id="custom-region" placeholder="e.g. Oregon, US"
+                            class="w-full bg-gray-50 rounded-xl p-3 text-sm border border-gray-200 outline-none focus:border-blue-400"
+                            onchange="saveSetting('customRegion', 'lm_custom_region', this.value)">
+                    </div>
+                    <button onclick="validateCustomLocation()"
+                        class="w-full py-3 rounded-xl bg-blue-50 text-blue-500 font-semibold text-sm active:scale-[0.98] transition-transform">
+                        Validate Location
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <button onclick="testImageModel()" id="btn-model-preview"
+                    class="w-full py-3.5 rounded-xl bg-purple-50 text-purple-500 font-semibold text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+                    <i data-lucide="image" class="w-4 h-4"></i> Preview Image Model
+                </button>
+            </div>
+
+            <div>
+                <label class="env-label block mb-1.5">Auto-Refresh</label>
+                <select id="inp-frequency" onchange="setFrequency(this.value)"
+                    class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
+                    <option value="0">Manual only</option>
+                    <option value="15">Every 15 minutes</option>
+                    <option value="30">Every 30 minutes</option>
+                    <option value="60">Every hour</option>
+                    <option value="120">Every 2 hours</option>
+                </select>
+            </div>
+
+        </div>
+
+
+        
+    
+            <!-- Danger Zone -->
+            <div class="ios-card p-5 border border-red-100 mt-6">
+                <p class="text-[10px] font-black uppercase tracking-widest text-red-400 mb-2">Danger Zone</p>
+                <button onclick="resetApp()"
+                    class="w-full py-3.5 rounded-xl bg-red-50 text-red-500 font-semibold text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i> Reset App to Defaults
+                </button>
+            </div>
+    </section>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="fixed bottom-0 left-0 right-0 glass border-t border-gray-200/60 flex justify-around pt-2 pb-8 z-40">
+    <button onclick="showTab('home')" id="nav-home" class="flex flex-col items-center gap-0.5 tab-active">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="text-[9px] font-semibold">Home</span>
+    </button>
+    <button onclick="showTab('themes')" id="nav-themes" class="flex flex-col items-center gap-0.5 tab-inactive">
+        <i data-lucide="calendar-days" class="w-5 h-5"></i>
+        <span class="text-[9px] font-semibold">Themes</span>
+    </button>
+    <button onclick="showTab('prompt')" id="nav-prompt" class="flex flex-col items-center gap-0.5 tab-inactive">
+        <i data-lucide="pencil-line" class="w-5 h-5"></i>
+        <span class="text-[9px] font-semibold">Prompt</span>
+    </button>
+    <button onclick="showTab('settings')" id="nav-settings" class="flex flex-col items-center gap-0.5 tab-inactive">
+        <i data-lucide="settings-2" class="w-5 h-5"></i>
+        <span class="text-[9px] font-semibold">Settings</span>
+    </button>
+</nav>
+
+<!-- THEME MODAL -->
+<div id="theme-modal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-end justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-3xl p-6 space-y-4 pb-10 shadow-2xl">
+        <h3 class="text-lg font-bold">New Theme</h3>
+        <input type="text" id="modal-name" placeholder="Theme name"
+            class="w-full bg-gray-50 p-4 rounded-xl border border-gray-200 text-sm outline-none focus:border-blue-400">
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="env-label block mb-1">Start Date</label>
+                <input type="date" id="modal-start"
+                    class="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-blue-400">
+            </div>
+            <div>
+                <label class="env-label block mb-1">End Date</label>
+                <input type="date" id="modal-end"
+                    class="w-full bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-blue-400">
+            </div>
+        </div>
+        <div class="flex gap-3 pt-2">
+            <button onclick="closeThemeModal()"
+                class="flex-1 py-4 rounded-2xl font-semibold text-gray-500 bg-gray-100 active:scale-[0.98] transition-transform">Cancel</button>
+            <button onclick="saveNewTheme()"
+                class="flex-1 py-4 rounded-2xl font-semibold text-white bg-blue-500 active:scale-[0.98] transition-transform">Save</button>
+        </div>
+    </div>
+</div>
+
+
+
+
+<!-- POI MODAL (full-screen) -->
+<div id="poi-modal" class="fixed inset-0 z-50 hidden flex-col" style="background:#f2f2f7">
+    <header class="sticky top-0 z-40 glass border-b border-gray-200/60 px-4 pt-12 pb-3 flex justify-between items-center">
+        <h1 class="text-2xl font-black tracking-tight text-gray-900">Manage POIs</h1>
+        <button onclick="closePoiModal()" class="bg-gray-100 p-2.5 rounded-xl active:scale-95 transition-transform">
+            <i data-lucide="x" class="w-5 h-5 text-gray-600"></i>
+        </button>
+    </header>
+    <main class="max-w-lg mx-auto w-full px-4 pt-4 pb-28 space-y-4 overflow-y-auto">
+
+        <!-- City Selector -->
+        <div class="ios-card p-5">
+            <label class="env-label block mb-1.5">Location</label>
+            <select id="poi-city-sel" onchange="poiSelectCity(this.value)"
+                class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
+                <option value="">No cached locations yet — generate a wallpaper first</option>
+            </select>
+        </div>
+
+        <!-- POI List -->
+        <div id="poi-list-card" class="ios-card p-5 space-y-3">
+            <div class="flex justify-between items-center">
+                <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">Points of Interest</p>
+                <button onclick="openPoiForm()"
+                    class="bg-blue-500 text-white px-4 py-2 rounded-xl flex items-center gap-1.5 text-xs font-semibold active:scale-95 transition-transform">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add POI
+                </button>
+            </div>
+            <div id="poi-list" class="space-y-2">
+                <p class="text-sm text-gray-400 text-center py-4">No POIs cached for this location.</p>
+            </div>
+        </div>
+
+        <!-- Add / Edit Form -->
+        <div id="poi-form-card" class="ios-card p-5 space-y-4 hidden">
+            <p id="poi-form-title" class="text-[10px] font-black uppercase tracking-widest text-gray-400">Add POI</p>
+
+            <!-- Name -->
+            <div>
+                <label class="env-label block mb-1.5">Name <span class="text-red-400 normal-case text-[10px]">required</span></label>
+                <input type="text" id="poi-form-name" placeholder="e.g. Powell's City of Books"
+                    class="w-full bg-gray-50 rounded-xl p-3 text-sm border border-gray-200 outline-none focus:border-blue-400">
+            </div>
+
+            <!-- Description + Lookup -->
+            <div>
+                <div class="flex justify-between items-center mb-1.5">
+                    <label class="env-label">Description <span class="text-red-400 normal-case text-[10px]">required</span></label>
+                    <button onclick="lookupPoiDesc()" id="btn-poi-lookup"
+                        class="flex items-center gap-1.5 bg-blue-50 text-blue-500 px-3 py-1.5 rounded-lg text-[11px] font-semibold active:scale-95 transition-transform">
+                        <i id="poi-lookup-icon" data-lucide="search" class="w-3.5 h-3.5"></i>
+                        <span id="poi-lookup-label">Lookup</span>
+                        <div id="poi-lookup-spinner" class="hidden w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                    </button>
+                </div>
+                <textarea id="poi-form-desc" rows="4"
+                    placeholder="1–2 sentences describing what this location looks like…"
+                    class="w-full bg-gray-50 rounded-xl p-3 text-sm border border-gray-200 outline-none focus:border-blue-400 resize-none"></textarea>
+            </div>
+
+            <!-- Image Preview -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="env-label">Image Preview</label>
+                    <button onclick="generatePoiPreview()" id="btn-poi-preview"
+                        class="flex items-center gap-1.5 bg-purple-50 text-purple-500 px-3 py-1.5 rounded-lg text-[11px] font-semibold active:scale-95 transition-transform">
+                        <i id="poi-preview-icon" data-lucide="image" class="w-3.5 h-3.5"></i>
+                        <span id="poi-preview-label">Generate</span>
+                        <div id="poi-preview-spinner" class="hidden w-3.5 h-3.5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                    </button>
+                </div>
+                <div id="poi-img-area" class="hidden rounded-xl overflow-hidden bg-gray-100 aspect-video">
+                    <img id="poi-img-preview" class="w-full h-full object-cover" alt="">
+                </div>
+            </div>
+
+            <!-- Save / Cancel -->
+            <div class="flex gap-3 pt-1">
+                <button onclick="closePoiForm()"
+                    class="flex-1 py-3.5 rounded-2xl font-semibold text-gray-500 bg-gray-100 active:scale-[0.98] transition-transform text-sm">Cancel</button>
+                <button onclick="savePoiEntry()"
+                    class="flex-1 py-3.5 rounded-2xl font-semibold text-white bg-blue-500 active:scale-[0.98] transition-transform text-sm shadow-lg shadow-blue-200">Save POI</button>
+            </div>
+        </div>
+
+        <!-- Cache Management -->
+        <div class="ios-card p-5 space-y-3">
+            <p class="env-label">Cache</p>
+            <p id="cache-info-modal" class="text-sm text-gray-500">--</p>
+            <button onclick="clearPOICache()"
+                class="w-full py-3.5 rounded-xl bg-red-50 text-red-500 font-semibold text-sm active:scale-[0.98] transition-transform">
+                Clear All POI Cache
+            </button>
+        </div>
+
+    </main>
+</div>
+
+<!-- STYLES MODAL (full-screen) -->
+<div id="styles-modal" class="fixed inset-0 z-50 hidden flex-col" style="background:#f2f2f7">
+    <header class="sticky top-0 z-40 glass border-b border-gray-200/60 px-4 pt-12 pb-3 flex justify-between items-center">
+        <h1 class="text-2xl font-black tracking-tight text-gray-900">Manage Styles</h1>
+        <button onclick="closeStylesModal()" class="bg-gray-100 p-2.5 rounded-xl active:scale-95 transition-transform">
+            <i data-lucide="x" class="w-5 h-5 text-gray-600"></i>
+        </button>
+    </header>
+    <main class="max-w-lg mx-auto w-full px-4 pt-4 pb-28 space-y-4 overflow-y-auto">
+
+        <!-- Active Style -->
+        <div class="ios-card p-5">
+            <label class="env-label block mb-1.5">Active Style</label>
+            <select id="inp-style" onchange="saveSetting('style','lm_style',this.value)"
+                class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400">
+            </select>
+        </div>
+
+        <!-- Styles List -->
+        <div class="ios-card p-5 space-y-3">
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">Your Styles</p>
+            <div id="style-list" class="space-y-1.5"></div>
+            <div class="flex gap-2 pt-1">
+                <input type="text" id="inp-new-style" placeholder="Add new style…"
+                    class="flex-1 bg-gray-50 rounded-xl p-3 text-sm border border-gray-200 outline-none focus:border-blue-400">
+                <button onclick="addStyle()" class="bg-blue-500 text-white px-5 rounded-xl font-semibold text-sm active:scale-95 transition-transform">Add</button>
+            </div>
+        </div>
+
+    </main>
+</div>
+<script>
+// ─────────────────────────────────────────────────────────────
+//  APP CONFIG
+// ─────────────────────────────────────────────────────────────
+const APP_NAME = "Lumina Aeris";  // ← rename the app here
+
+// ─────────────────────────────────────────────────────────────
+//  DEFAULTS
+// ─────────────────────────────────────────────────────────────
+const DEFAULT_THEMES = [
+  {"Begin":101,"End":103,"Theme":"New Years"},
+  {"Begin":104,"End":114,"Theme":"Winter Hygge"},
+  {"Begin":115,"End":121,"Theme":"MLK Day and Reflection"},
+  {"Begin":122,"End":131,"Theme":"Deep Winter"},
+  {"Begin":201,"End":212,"Theme":"Valentines Day"},
+  {"Begin":213,"End":213,"Theme":"Scary Friday the 13th and Valentines Day"},
+  {"Begin":214,"End":214,"Theme":"Valentines Day"},
+  {"Begin":215,"End":216,"Theme":"Presidents Day and Mid-Winter"},
+  {"Begin":217,"End":217,"Theme":"Lunar New Year"},
+  {"Begin":218,"End":221,"Theme":"Mid-Winter"},
+  {"Begin":222,"End":228,"Theme":"Late Winter Thaw"},
+  {"Begin":301,"End":313,"Theme":"St. Patricks Day"},
+  {"Begin":314,"End":314,"Theme":"Pi Day"},
+  {"Begin":315,"End":317,"Theme":"St. Patricks Day"},
+  {"Begin":318,"End":329,"Theme":"Early Spring"},
+  {"Begin":330,"End":405,"Theme":"Easter and Spring Bloom"},
+  {"Begin":406,"End":421,"Theme":"Spring Renewal"},
+  {"Begin":422,"End":422,"Theme":"Earth Day"},
+  {"Begin":423,"End":430,"Theme":"Arbor Day and Spring"},
+  {"Begin":501,"End":504,"Theme":"May the 4th and Cinco de Mayo"},
+  {"Begin":505,"End":510,"Theme":"Cinco de Mayo and Flowers"},
+  {"Begin":511,"End":517,"Theme":"Mothers Day"},
+  {"Begin":518,"End":531,"Theme":"Memorial Day Weekend"},
+  {"Begin":601,"End":617,"Theme":"Pride and Early Summer"},
+  {"Begin":618,"End":620,"Theme":"Juneteenth"},
+  {"Begin":621,"End":621,"Theme":"Fathers Day and Solstice"},
+  {"Begin":622,"End":630,"Theme":"Summer Vacation"},
+  {"Begin":701,"End":707,"Theme":"Independence Day"},
+  {"Begin":708,"End":731,"Theme":"Mid-Summer Heat"},
+  {"Begin":801,"End":814,"Theme":"Late Summer"},
+  {"Begin":815,"End":831,"Theme":"Back to School"},
+  {"Begin":901,"End":907,"Theme":"Labor Day"},
+  {"Begin":908,"End":921,"Theme":"Early Autumn"},
+  {"Begin":922,"End":1004,"Theme":"Oktoberfest and Equinox"},
+  {"Begin":1005,"End":1014,"Theme":"Harvest Festival"},
+  {"Begin":1015,"End":1031,"Theme":"Halloween"},
+  {"Begin":1101,"End":1110,"Theme":"Post-Halloween and Fall"},
+  {"Begin":1111,"End":1111,"Theme":"Veterans Day"},
+  {"Begin":1112,"End":1127,"Theme":"Thanksgiving"},
+  {"Begin":1128,"End":1130,"Theme":"Black Friday and Cyber Week"},
+  {"Begin":1201,"End":1225,"Theme":"Christmas and Hanukkah"},
+  {"Begin":1226,"End":1230,"Theme":"Boxing Day and Kwanzaa"},
+  {"Begin":1231,"End":1231,"Theme":"New Years Eve"}
+];
+
+const DEFAULT_STYLES = [
+    "Hyper photo realistic",
+    "Cinematic photography",
+    "Watercolor painting",
+    "Oil painting",
+    "Pencil sketch",
+    "Crayon drawing",
+    "Claymation",
+    "3D animation render",
+    "Pixar-style 3D illustration",
+    "Flat vector illustration",
+    "Paper craft collage",
+    "Ukiyo-e woodblock print",
+    "Impressionist painting",
+    "Pixel art",
+    "Neon noir",
+    "Vintage film photograph",
+    "Comic book art",
+    "Stained glass illustration"
+];
+
+const DEFAULT_PROMPT_DAY =
+`Task: Generate a {style} style image of {poi_name} in {city}, {state}.
+
+Subject Detail: {poi_desc} Ensure the depiction is architecturally and geographically accurate to real-world visual references of this location.
+
+Environment and Lighting:
+Time of Day: {time_of_day} {datetime}
+Weather: {weather}
+Celestial Details: Realistically feature the sun where sunrise is {sunrise}, sunset is {sunset}, and the UV index is {uv_index} to approximate the position and intensity of the sun. The {weather} weather should realistically affect the visibility of the sun.
+
+Composition and Constraints:
+Safe Zone Framing: Compose the shot keeping all significant elements centered and all critical content inside about 80 to 90 percent of the width and height, centered. Keep all critical text inside 50 percent of the width and height, centered. Treat roughly 8 to 10 percent top and bottom and about 5 percent on each side as expendable bleed where elements can be cropped or hidden under UI and depth zoom. Avoid placing any subjects of significance within 15 percent of the image borders.
+
+Atmosphere: Incorporate the theme of {theme} as a subtle, cohesive element throughout the scene. Capture the natural environment vividly without exaggeration.`;
+
+const DEFAULT_PROMPT_NIGHT =
+`Task: Generate a {style} style image of {poi_name} in {city}, {state}.
+
+Subject Detail: {poi_desc} Ensure the depiction is architecturally and geographically accurate to real-world visual references of this location.
+
+Environment and Lighting:
+Time of Day: {time_of_day} {datetime}
+Weather: {weather}
+Celestial Details: Feature the moon in {moon_phase} phase with {moon_illumination} percent illumination. Account for moonrise {moonrise} and moonset {moonset} for realistic positioning. The {weather} weather should realistically affect moon visibility.
+
+Composition and Constraints:
+Safe Zone Framing: Compose the shot keeping all significant elements centered and all critical content inside about 80 to 90 percent of the width and height, centered. Keep all critical text inside 50 percent of the width and height, centered. Treat roughly 8 to 10 percent top and bottom and about 5 percent on each side as expendable bleed where elements can be cropped or hidden under UI and depth zoom. Avoid placing any subjects of significance within 15 percent of the image borders.
+
+Atmosphere: Incorporate the theme of {theme} as a subtle, cohesive element throughout the scene. Capture the natural environment vividly without exaggeration.`;
+
+const PROMPT_VARS = [
+    ["{style}",             "style"],
+    ["{poi_name}",          "poi name"],
+    ["{poi_desc}",          "poi desc"],
+    ["{city}",              "city"],
+    ["{state}",             "state"],
+    ["{time_of_day}",       "time of day"],
+    ["{datetime}",          "date / time"],
+    ["{weather}",           "weather"],
+    ["{sunrise}",           "sunrise"],
+    ["{sunset}",            "sunset"],
+    ["{uv_index}",          "uv index"],
+    ["{moon_phase}",        "moon phase"],
+    ["{moon_illumination}", "moon illum"],
+    ["{moonrise}",          "moonrise"],
+    ["{moonset}",           "moonset"],
+    ["{theme}",             "theme"]
+];
+
+const WMO_CODES = {
+    0:"Clear sky",1:"Mainly clear",2:"Partly cloudy",3:"Overcast",
+    45:"Fog",48:"Icy fog",
+    51:"Light drizzle",53:"Moderate drizzle",55:"Dense drizzle",
+    61:"Slight rain",63:"Moderate rain",65:"Heavy rain",
+    66:"Light freezing rain",67:"Heavy freezing rain",
+    71:"Slight snow",73:"Moderate snow",75:"Heavy snow",77:"Snow grains",
+    80:"Rain showers",81:"Moderate showers",82:"Violent showers",
+    85:"Snow showers",86:"Heavy snow showers",
+    95:"Thunderstorm",96:"Thunderstorm with hail",99:"Thunderstorm with heavy hail"
+};
+
+// ─────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────
+const S = {
+    themes:          JSON.parse(localStorage.getItem("lm_themes")       || "null") || DEFAULT_THEMES,
+    styles:          JSON.parse(localStorage.getItem("lm_styles")       || "null") || DEFAULT_STYLES,
+    poiCache:        JSON.parse(localStorage.getItem("lm_poi")          || "{}"),
+    apiKey:          localStorage.getItem("lm_apikey")     || "",
+    style:           localStorage.getItem("lm_style")      || DEFAULT_STYLES[0],
+    imageModel:      localStorage.getItem("lm_imgmodel")   || "gptimage",
+    quality:         localStorage.getItem("lm_quality")    || "medium",
+    frequency:       parseInt(localStorage.getItem("lm_freq") || "0"),
+    promptDay:       localStorage.getItem("lm_prompt_day")   || DEFAULT_PROMPT_DAY,
+    promptNight:     localStorage.getItem("lm_prompt_night") || DEFAULT_PROMPT_NIGHT,
+    activePromptTab: "day",
+    timer:           null,
+    blobUrl:         null
+};
+
+// ─────────────────────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────────────────────
+(function init() {
+    document.getElementById("inp-apikey").value    = S.apiKey;
+    document.getElementById("inp-imgmodel").value  = S.imageModel;
+    document.getElementById("inp-quality").value   = S.quality;
+    document.getElementById("inp-frequency").value = S.frequency;
+    renderStyleSelect();
+    renderStyleList();
+    renderVarChips();
+    refreshPromptTextarea();
+    refreshCacheInfo();
+    if (S.frequency > 0) setFrequency(S.frequency, false);
+    if (!S.currentCity) S.currentCity = localStorage.getItem("lm_last_city") || "";
+    if (!S.currentState) S.currentState = localStorage.getItem("lm_last_state") || "";
+    fetchImageModels();
+    lucide.createIcons();
+})();
+
+
+function getActiveLocation() {
+    if (S.locationMode === "custom" && S.customLat && S.customLon) {
+        return {
+            lat: S.customLat,
+            lon: S.customLon,
+            city: S.customCity,
+            state: S.customState,
+            country: S.customCountry,
+            locationLabel: (S.customCountry.toLowerCase() === "united states" || S.customCountry.toLowerCase() === "us") && S.customState
+                ? `${S.customCity}, ${S.customState}`
+                : `${S.customCity}, ${S.customCountry || S.customState}`
+        };
+    }
+    return null;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MAIN ENGINE
+// ─────────────────────────────────────────────────────────────
+async function runEngine() {
+    if (!S.apiKey) {
+        alert("Add your Pollinations API key in Settings first.");
+        showTab("settings");
+        return;
+    }
+    setLoading(true);
+
+    try {
+        // 1 & 2 · Location
+        let lat, lon, city, state, country, locationLabel;
+        const activeLoc = getActiveLocation();
+
+        if (activeLoc) {
+            setStatus("Using custom location...", "text-blue-500");
+            ({ lat, lon, city, state, country, locationLabel } = activeLoc);
+            S.currentCity = city;
+            S.currentState = state;
+            S.locationLabel = locationLabel;
+        } else {
+            setStatus("Getting location...", "text-blue-500");
+            const pos = await new Promise((res, rej) =>
+                navigator.geolocation.getCurrentPosition(res, rej, { timeout: 12000 })
+            );
+            lat = pos.coords.latitude;
+            lon = pos.coords.longitude;
+
+            setStatus("Resolving city...", "text-blue-500");
+            const geoData = await (await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+            )).json();
+            const addr  = geoData.address;
+            city  = addr.city || addr.town || addr.village || addr.county || "Unknown City";
+            state = addr.state || "";
+            country = addr.country || "";
+
+            const isUS = (addr.country_code || "").toLowerCase() === 'us';
+            locationLabel = (isUS && state) ? `${city}, ${state}` : `${city}, ${country}`;
+
+            S.currentCity = city;
+            S.currentState = state;
+            S.locationLabel = locationLabel;
+            localStorage.setItem("lm_last_city", city);
+            localStorage.setItem("lm_last_state", state);
+            localStorage.setItem("lm_last_country", country);
+        }
+
+        // 3 · Weather via Open-Meteo (free, no key)
+        setStatus("Fetching weather...", "text-blue-500");
+        const wxData = await (await fetch(
+            "https://api.open-meteo.com/v1/forecast"
+            + `?latitude=${lat}&longitude=${lon}`
+            + "&current=temperature_2m,apparent_temperature,weather_code,cloud_cover,is_day"
+            + "&daily=sunrise,sunset,uv_index_max"
+            + "&timezone=auto&forecast_days=1&temperature_unit=fahrenheit"
+        )).json();
+
+        const cur         = wxData.current;
+        const day         = wxData.daily;
+        const weatherDesc = WMO_CODES[cur.weather_code] || `Conditions code ${cur.weather_code}`;
+        const tempF       = Math.round(cur.temperature_2m);
+        const feelsF      = Math.round(cur.apparent_temperature);
+        const cloudPct    = cur.cloud_cover;
+        const isDay       = cur.is_day === 1;
+        const uvIndex     = day.uv_index_max[0] ?? 0;
+        const sunriseStr  = fmtTime(day.sunrise[0]);
+        const sunsetStr   = fmtTime(day.sunset[0]);
+        const timeOfDay   = isDay ? "Daytime" : "Nighttime";
+        const fullWeather = `${weatherDesc}, ${tempF}F feels like ${feelsF}F, ${cloudPct} percent cloud cover`;
+
+        // 4 · Moon
+        const moon        = getMoonData(new Date());
+        const moonriseStr = approxMoonrise(moon.fraction, sunriseStr, sunsetStr);
+        const moonsetStr  = approxMoonset(moon.fraction,  sunriseStr, sunsetStr);
+
+        // 5 · Theme and datetime
+        const theme    = getThemeForDate(new Date());
+        const dateTime = new Date().toLocaleString("en-US", {
+            weekday:"long", month:"long", day:"numeric",
+            year:"numeric", hour:"2-digit", minute:"2-digit"
+        });
+
+        // 6 · Update context panel
+        setText("ctx-location",    locationLabel);
+        setText("ctx-weather",     weatherDesc);
+        setText("ctx-temp",        `${tempF}F (feels ${feelsF}F)`);
+        setText("ctx-uv",          `${uvIndex}`);
+        setText("ctx-sunrise",     sunriseStr);
+        setText("ctx-sunset",      sunsetStr);
+        setText("ctx-timeofday",   timeOfDay);
+        setText("ctx-moon",        moon.phaseEmoji);
+        setText("ctx-illumination",`${moon.illumination} percent`);
+        setText("ctx-moonriseset", `Up ${moonriseStr}  Down ${moonsetStr}`);
+        setText("ctx-theme",       theme);
+
+        // 7 · POIs — cached per city
+        setStatus("Fetching POIs...", "text-blue-500");
+        const cacheKey = city.toLowerCase().replace(/\W+/g, "_");
+        let pois = S.poiCache[cacheKey];
+
+        if (!pois) {
+            const sysPrompt =
+`Role: You are a geographic data assistant and an expert of points of interest and other unique and notable places of things views or vistas of requested locations. Task: Generate a list of up to 30 visually unique points of interest, landmarks, or vistas in or nearby the city of ${city} in the state of ${state}
+
+Take your time to do a thorough search
+
+Format Rules:
+1. Output ONLY a raw JSON array of objects.
+2. Do NOT include markdown code blocks (no backticks).
+3. Do NOT include any introductory or concluding text.
+4. Each object must have exactly two keys: "name" and "description".
+5. "description" must be 1-2 concise sentences that visually describes the named point of interest`;
+
+            const userPrompt = `List up to 30 visually unique points of interest, landmarks, or vistas in or nearby ${city}, ${state}`;
+
+            const textURL = `https://gen.pollinations.ai/text/${encodeURIComponent(userPrompt)}`
+                + `?model=gemini-search`
+                + ``
+                + `&system=${encodeURIComponent(sysPrompt)}`
+                + `&temperature=0.2`
+                + `&seed=${Math.floor(Math.random() * 999999)}`
+                + `&key=${encodeURIComponent(S.apiKey)}`;
+
+            let textRes = await fetch(textURL);
+            let rawText = await textRes.text();
+
+            // Auto-fallback to openai if deepseek gives a bad response
+            if (!textRes.ok || !rawText.includes('[')) {
+                console.warn("gemini-search failed or didn't return JSON. Falling back to perplexity-reasoning...");
+                const fallbackURL = `https://gen.pollinations.ai/text/${encodeURIComponent(userPrompt)}`
+                    + `?model=perplexity-reasoning`
+                    + ``
+                    + `&system=${encodeURIComponent(sysPrompt)}`
+                    + `&temperature=0.2`
+                    + `&seed=${Math.floor(Math.random() * 999999)}`
+                    + `&key=${encodeURIComponent(S.apiKey)}`;
+                textRes = await fetch(fallbackURL);
+                rawText = await textRes.text();
+            }
+
+            if (!textRes.ok) {
+                throw new Error(`POI API returned ${textRes.status}. Output: ${rawText.substring(0,100)}`);
+            }
+            console.log("RAW POI RESPONSE:", rawText.substring(0, 800));
+
+            pois = extractJSON(rawText);
+            if (!Array.isArray(pois) || pois.length === 0)
+                throw new Error("POI response was not a valid JSON array -- open console to inspect");
+
+            S.poiCache[cacheKey] = pois;
+            localStorage.setItem("lm_poi", JSON.stringify(S.poiCache));
+            refreshCacheInfo();
+        }
+
+        // 8 · Random POI
+        const poi = pois[Math.floor(Math.random() * pois.length)];
+        setText("ctx-poi", poi.name);
+
+        // 9 · Build prompt from template
+        const prompt = buildPrompt({
+            style: S.style, poi, city, state, timeOfDay, dateTime,
+            weather: fullWeather, sunriseStr, sunsetStr, uvIndex,
+            moon, moonriseStr, moonsetStr, theme
+        });
+        document.getElementById("ctx-prompt").textContent = prompt;
+
+        // 10 · Sanitize for URL
+        const safePrompt = sanitizePrompt(prompt);
+
+        // 11 · Generate image
+        setStatus("Painting image...", "text-purple-500");
+        const W = Math.min(Math.round(window.screen.width  * window.devicePixelRatio), 1440);
+        const H = Math.min(Math.round(window.screen.height * window.devicePixelRatio), 3120);
+
+        const imgURL = `https://gen.pollinations.ai/image/${encodeURIComponent(safePrompt)}`
+            + `?model=${S.imageModel}`
+            + `&width=${W}&height=${H}`
+            + `&quality=${S.quality}`
+            + `&nologo=true`
+            + `&private=true`
+            + `&key=${encodeURIComponent(S.apiKey)}`
+            + `&seed=${Math.floor(Math.random() * 999999)}`;
+
+        const imgRes = await fetch(imgURL);
+        if (!imgRes.ok) {
+            const errBody = await imgRes.json().catch(() => ({}));
+            throw new Error(errBody.message || `Image API returned ${imgRes.status}`);
+        }
+
+        const blob = await imgRes.blob();
+        if (S.blobUrl) URL.revokeObjectURL(S.blobUrl);
+        S.blobUrl = URL.createObjectURL(blob);
+
+        // 12 · Render
+        const imgEl = document.getElementById("img-preview");
+        imgEl.onload = () => {
+            imgEl.classList.remove("opacity-0");
+            document.getElementById("img-placeholder").classList.add("hidden");
+            document.getElementById("img-overlay").classList.remove("opacity-0");
+        };
+        imgEl.src = S.blobUrl;
+        document.getElementById("lbl-poi-name").textContent = poi.name;
+        document.getElementById("lbl-poi-desc").textContent = poi.description;
+        document.getElementById("lbl-theme").textContent    = theme;
+        document.getElementById("btn-download").classList.remove("hidden");
+
+        setStatus("Done", "text-green-500");
+
+    } catch (err) {
+        console.error(err);
+        setStatus(`Error -- ${err.message}`, "text-red-500");
+        alert(`Something went wrong:\n\n${err.message}`);
+    }
+
+    setLoading(false);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PROMPT BUILDER (template variable substitution)
+// ─────────────────────────────────────────────────────────────
+function buildPrompt({ style, poi, city, state, timeOfDay, dateTime,
+                       weather, sunriseStr, sunsetStr, uvIndex,
+                       moon, moonriseStr, moonsetStr, theme }) {
+
+    const template = timeOfDay === "Daytime" ? S.promptDay : S.promptNight;
+
+    return template
+        .replace(/{style}/g,             style)
+        .replace(/{poi_name}/g,          poi.name)
+        .replace(/{poi_desc}/g,          poi.description)
+        .replace(/{city}/g,              city)
+        .replace(/{state}/g,             state)
+        .replace(/{time_of_day}/g,       timeOfDay)
+        .replace(/{datetime}/g,          dateTime)
+        .replace(/{weather}/g,           weather)
+        .replace(/{sunrise}/g,           sunriseStr)
+        .replace(/{sunset}/g,            sunsetStr)
+        .replace(/{uv_index}/g,          String(uvIndex))
+        .replace(/{moon_phase}/g,        moon.phase)
+        .replace(/{moon_illumination}/g, String(moon.illumination))
+        .replace(/{moonrise}/g,          moonriseStr)
+        .replace(/{moonset}/g,           moonsetStr)
+        .replace(/{theme}/g,             theme);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SANITIZE (strip non-ASCII, %, newlines before URL encoding)
+// ─────────────────────────────────────────────────────────────
+function sanitizePrompt(text) {
+    return text
+        .replace(/[^\x00-\x7F]/g, "")
+        .replace(/%/g, " percent")
+        .replace(/\//g, " ")
+        .replace(/\n/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  MOON (Julian date — plain phase for prompt, emoji for UI)
+// ─────────────────────────────────────────────────────────────
+function getMoonData(date) {
+    const Y = date.getFullYear(), M = date.getMonth() + 1, D = date.getDate();
+    const JD = 367*Y - Math.floor(7*(Y + Math.floor((M+9)/12))/4)
+             + Math.floor(275*M/9) + D + 1721013.5;
+    const T  = (JD - 2451545.0) / 36525;
+    const Lm = ((218.3165 + 481267.8813*T) % 360 + 360) % 360;
+    const Ms = ((357.5291 +  35999.0503*T) % 360 + 360) % 360;
+    const pa = ((Lm - Ms) % 360 + 360) % 360;
+    const fr = pa / 360;
+    const il = Math.round((1 - Math.cos(pa * Math.PI / 180)) / 2 * 100);
+    const labels = [
+        [0.033, "New Moon",        "New Moon"],
+        [0.133, "Waxing Crescent", "Waxing Crescent"],
+        [0.233, "First Quarter",   "First Quarter"],
+        [0.367, "Waxing Gibbous",  "Waxing Gibbous"],
+        [0.467, "Full Moon",       "Full Moon"],
+        [0.567, "Waning Gibbous",  "Waning Gibbous"],
+        [0.700, "Last Quarter",    "Last Quarter"],
+        [1.000, "Waning Crescent", "Waning Crescent"]
+    ];
+    const match  = (fr < 0.033 || fr >= 0.967)
+        ? ["New Moon", "New Moon"]
+        : (labels.find(([max]) => fr < max) || [0, "Waning Crescent", "Waning Crescent"]).slice(1);
+    const EMOJIS = {
+        "New Moon":"🌑","Waxing Crescent":"🌒","First Quarter":"🌓",
+        "Waxing Gibbous":"🌔","Full Moon":"🌕","Waning Gibbous":"🌖",
+        "Last Quarter":"🌗","Waning Crescent":"🌘"
+    };
+    return {
+        phase:      match[0],
+        phaseEmoji: match[0] + " " + (EMOJIS[match[0]] || ""),
+        illumination: il,
+        fraction: fr
+    };
+}
+
+function approxMoonrise(fr, sr, ss) {
+    const srM = t2m(sr), ssM = t2m(ss), noon = (srM+ssM)/2, mid = srM-(ssM-srM)/2;
+    let rm;
+    if      (fr < 0.25) rm = lerp(srM,      noon,      fr*4);
+    else if (fr < 0.50) rm = lerp(noon,      ssM,      (fr-.25)*4);
+    else if (fr < 0.75) rm = lerp(ssM,       mid+1440, (fr-.50)*4);
+    else                rm = lerp(mid+1440,  srM+1440, (fr-.75)*4);
+    return m2t(rm % 1440);
+}
+function approxMoonset(fr, sr, ss) {
+    const srM = t2m(sr), ssM = t2m(ss), noon = (srM+ssM)/2, mid = srM-(ssM-srM)/2;
+    let sm;
+    if      (fr < 0.25) sm = lerp(ssM,       mid+1440,  fr*4);
+    else if (fr < 0.50) sm = lerp(mid+1440,  srM+1440,  (fr-.25)*4);
+    else if (fr < 0.75) sm = lerp(srM+1440,  noon+1440, (fr-.50)*4);
+    else                sm = lerp(noon+1440, ssM+1440,  (fr-.75)*4);
+    return m2t(sm % 1440);
+}
+function lerp(a, b, t) { return a + (b - a) * t; }
+function t2m(s) {
+    if (!s) return 720;
+    const p = s.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+    if (!p) return 720;
+    let h = parseInt(p[1]), m = parseInt(p[2]);
+    const ap = (p[3] || "").toUpperCase();
+    if (ap === "PM" && h !== 12) h += 12;
+    if (ap === "AM" && h === 12) h = 0;
+    return h * 60 + m;
+}
+function m2t(mins) {
+    let h = Math.floor(mins / 60) % 24, m = Math.floor(mins % 60);
+    const ap = h >= 12 ? "PM" : "AM";
+    if (h > 12) h -= 12;
+    if (h === 0) h = 12;
+    return `${h}:${String(m).padStart(2,"0")} ${ap}`;
+}
+function fmtTime(iso) {
+    if (!iso) return "--";
+    return new Date(iso).toLocaleTimeString("en-US", { hour:"2-digit", minute:"2-digit", hour12:true });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  THEME HELPERS
+// ─────────────────────────────────────────────────────────────
+function getThemeForDate(d) {
+    const ord = (d.getMonth() + 1) * 100 + d.getDate();
+    return S.themes.find(t => ord >= t.Begin && ord <= t.End)?.Theme ?? "General";
+}
+function ordinalToLabel(ord) {
+    const M = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return `${M[Math.floor(ord/100) - 1]} ${ord % 100}`;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  JSON EXTRACTION (bracket-depth — ignores [1][2] footnotes)
+// ─────────────────────────────────────────────────────────────
+function extractJSON(text) {
+    try { return JSON.parse(text); } catch(e) {}
+
+    // Attempt to strip markdown fences
+    let cleaned = text.replace(/```[a-z]*\n?/gi, "").replace(/```/g, "").trim();
+    try { return JSON.parse(cleaned); } catch(e) {}
+
+    // Find first '[' and last ']'
+    const start = text.indexOf('[');
+    const end = text.lastIndexOf(']');
+    if (start !== -1 && end !== -1 && end > start) {
+        try {
+            return JSON.parse(text.substring(start, end + 1));
+        } catch(e) {
+            console.error("JSON parse failed on substring:", text.substring(start, end + 1));
+            throw new Error("Found JSON array brackets but failed to parse -- check DevTools console");
+        }
+    }
+
+    throw new Error("Could not find a valid JSON array in API response. Raw response snippet: " + text.substring(0, 100) + "...");
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PROMPT BUILDER TAB
+// ─────────────────────────────────────────────────────────────
+function renderVarChips() {
+    const container = document.getElementById("var-chips");
+    if (!container) return;
+    container.innerHTML = PROMPT_VARS.map(v => {
+        // Handle both simple string arrays and [variable, label] arrays
+        const isArray = Array.isArray(v);
+        const variable = isArray ? v[0] : v;
+        const label = isArray ? v[1] : v;
+        return `<span class="var-chip" onclick="insertVar('${variable}')">${label}</span>`;
+    }).join("");
+}
+
+function switchPromptTab(tab) {
+    // Save current before switching
+    const current = document.getElementById("prompt-textarea").value;
+    if (S.activePromptTab === "day")   S.promptDay   = current;
+    else                               S.promptNight = current;
+
+    S.activePromptTab = tab;
+
+    document.getElementById("ptab-day").className   = tab === "day"
+        ? "flex-1 py-2.5 rounded-xl text-sm font-semibold bg-blue-500 text-white transition-all"
+        : "flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-400 transition-all";
+    document.getElementById("ptab-night").className = tab === "night"
+        ? "flex-1 py-2.5 rounded-xl text-sm font-semibold bg-blue-500 text-white transition-all"
+        : "flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-400 transition-all";
+
+    refreshPromptTextarea();
+}
+
+function refreshPromptTextarea() {
+    document.getElementById("prompt-textarea").value =
+        S.activePromptTab === "day" ? S.promptDay : S.promptNight;
+}
+
+function updatePromptState() {
+    const val = document.getElementById("prompt-textarea").value;
+    if (S.activePromptTab === "day") S.promptDay   = val;
+    else                             S.promptNight = val;
+}
+
+function insertVar(variable) {
+    const ta  = document.getElementById("prompt-textarea");
+    const s   = ta.selectionStart;
+    const e   = ta.selectionEnd;
+    const val = ta.value;
+    ta.value  = val.slice(0, s) + variable + val.slice(e);
+    ta.selectionStart = ta.selectionEnd = s + variable.length;
+    ta.focus();
+    updatePromptState();
+}
+
+function savePrompt() {
+    updatePromptState();
+    localStorage.setItem("lm_prompt_day",   S.promptDay);
+    localStorage.setItem("lm_prompt_night", S.promptNight);
+    alert("Prompts saved.");
+}
+
+function resetPrompt() {
+    if (!confirm("Reset to default prompt for " + S.activePromptTab + "?")) return;
+    if (S.activePromptTab === "day") {
+        S.promptDay = DEFAULT_PROMPT_DAY;
+        localStorage.setItem("lm_prompt_day", S.promptDay);
+    } else {
+        S.promptNight = DEFAULT_PROMPT_NIGHT;
+        localStorage.setItem("lm_prompt_night", S.promptNight);
+    }
+    refreshPromptTextarea();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  STYLES
+// ─────────────────────────────────────────────────────────────
+function renderStyleSelect() {
+    const sel = document.getElementById("inp-style");
+    sel.innerHTML = S.styles.map(s =>
+        `<option value="${escHtml(s)}" ${s === S.style ? "selected" : ""}>${escHtml(s)}</option>`
+    ).join("");
+}
+
+function renderStyleList() {
+    document.getElementById("style-list").innerHTML = S.styles.map((s, i) => `
+        <div class="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
+            <span class="flex-1 text-sm">${escHtml(s)}</span>
+            <button onclick="deleteStyle(${i})" class="text-gray-300 hover:text-red-400 active:scale-90 transition-transform p-1">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+        </div>`).join("");
+    lucide.createIcons();
+}
+
+function addStyle() {
+    const inp = document.getElementById("inp-new-style");
+    const val = inp.value.trim();
+    if (!val) return;
+    if (S.styles.includes(val)) { alert("Style already exists."); return; }
+    S.styles.push(val);
+    localStorage.setItem("lm_styles", JSON.stringify(S.styles));
+    inp.value = "";
+    renderStyleSelect();
+    renderStyleList();
+}
+
+function deleteStyle(i) {
+    if (S.styles.length <= 1) { alert("Must keep at least one style."); return; }
+    if (!confirm(`Delete "${S.styles[i]}"?`)) return;
+    if (S.style === S.styles[i]) S.style = S.styles[0] === S.styles[i] ? S.styles[1] : S.styles[0];
+    S.styles.splice(i, 1);
+    localStorage.setItem("lm_styles", JSON.stringify(S.styles));
+    localStorage.setItem("lm_style",  S.style);
+    renderStyleSelect();
+    renderStyleList();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  UI HELPERS
+// ─────────────────────────────────────────────────────────────
+function setStatus(msg, cls = "text-blue-500") {
+    const el = document.getElementById("status-bar");
+    el.textContent = msg;
+    el.className   = `text-[10px] font-bold uppercase tracking-widest ${cls}`;
+}
+function setLoading(v) {
+    document.getElementById("spinner").classList.toggle("hidden", !v);
+    const btn = document.getElementById("btn-run");
+    btn.disabled = v;
+    btn.classList.toggle("opacity-50", v);
+}
+function setText(id, val) { document.getElementById(id).textContent = val; }
+
+function showTab(name) {
+    ["home","themes","prompt","settings"].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add("hidden");
+        const nb = document.getElementById(`nav-${t}`);
+        nb.className = nb.className.replace("tab-active","tab-inactive");
+    });
+    document.getElementById(`tab-${name}`).classList.remove("hidden");
+    const nb = document.getElementById(`nav-${name}`);
+    nb.className = nb.className.replace("tab-inactive","tab-active");
+    if (name === "themes")   renderThemes();
+    if (name === "settings") { renderStyleList(); refreshCacheInfo(); }
+    if (name === "prompt")   { renderVarChips(); refreshPromptTextarea(); }
+    lucide.createIcons();
+}
+
+function saveSetting(key, lsKey, val) {
+    S[key] = val;
+    localStorage.setItem(lsKey, val);
+}
+
+function setFrequency(val, save = true) {
+    const mins = parseInt(val);
+    S.frequency = mins;
+    if (save) localStorage.setItem("lm_freq", mins);
+    if (S.timer) clearInterval(S.timer);
+    if (mins > 0) S.timer = setInterval(runEngine, mins * 60000);
+}
+
+function downloadImage() {
+    if (!S.blobUrl) return;
+    const a = document.createElement("a");
+    a.href     = S.blobUrl;
+    a.download = `lumina_${Date.now()}.jpg`;
+    a.click();
+}
+
+function refreshCacheInfo() {
+    const keys = Object.keys(S.poiCache);
+    const txt = keys.length === 0
+        ? "No locations cached yet"
+        : `${keys.length} location(s): ${keys.map(k => k.replace(/_/g," ")).join(", ")}`;
+    const el = document.getElementById("cache-info");
+    if (el) el.textContent = txt;
+    refreshCacheInfoModal();
+}
+function refreshCacheInfoModal() {
+    const el = document.getElementById("cache-info-modal");
+    if (!el) return;
+    const keys = Object.keys(S.poiCache);
+    el.textContent = keys.length === 0
+        ? "No locations cached yet"
+        : `${keys.length} location(s): ${keys.map(k => k.replace(/_/g," ")).join(", ")}`;
+}
+
+function clearPOICache() {
+    if (!confirm("Clear all cached POI data?")) return;
+    S.poiCache = {};
+    localStorage.removeItem("lm_poi");
+    refreshCacheInfo();
+    const sel = document.getElementById("poi-city-sel");
+    if (sel) sel.innerHTML = "<option value=''>No cached locations yet</option>";
+    const list = document.getElementById("poi-list");
+    if (list) list.innerHTML = "<p class=\"text-sm text-gray-400 text-center py-4\">No POIs cached.</p>";
+    if (typeof closePoiForm === "function") closePoiForm();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  THEME CRUD
+// ─────────────────────────────────────────────────────────────
+function renderThemes() {
+    const sorted = [...S.themes].sort((a, b) => a.Begin - b.Begin);
+    document.getElementById("theme-list").innerHTML = sorted.length === 0
+        ? '<p class="text-center text-gray-400 py-8 text-sm">No themes yet. Add one above.</p>'
+        : sorted.map(t => `
+            <div class="ios-card p-4 flex items-center gap-3">
+                <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-sm">${escHtml(t.Theme)}</p>
+                    <p class="text-[11px] text-gray-400 mt-0.5">${ordinalToLabel(t.Begin)} - ${ordinalToLabel(t.End)}</p>
+                </div>
+                <button onclick="deleteTheme(${t.Begin},${t.End})"
+                    class="p-2 text-gray-300 hover:text-red-400 flex-shrink-0 active:scale-90 transition-transform">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>`).join("");
+    lucide.createIcons();
+}
+
+function deleteTheme(begin, end) {
+    if (!confirm("Delete this theme?")) return;
+    S.themes = S.themes.filter(t => !(t.Begin === begin && t.End === end));
+    localStorage.setItem("lm_themes", JSON.stringify(S.themes));
+    renderThemes();
+}
+
+function openThemeModal()  { document.getElementById("theme-modal").classList.remove("hidden"); }
+function closeThemeModal() { document.getElementById("theme-modal").classList.add("hidden"); }
+
+function saveNewTheme() {
+    const name  = document.getElementById("modal-name").value.trim();
+    const start = document.getElementById("modal-start").value;
+    const end   = document.getElementById("modal-end").value;
+    if (!name || !start || !end) { alert("All three fields are required."); return; }
+    const toOrd = s => { const d = new Date(s + "T12:00:00"); return (d.getMonth()+1)*100 + d.getDate(); };
+    S.themes.push({ Begin: toOrd(start), End: toOrd(end), Theme: name });
+    localStorage.setItem("lm_themes", JSON.stringify(S.themes));
+    document.getElementById("modal-name").value  = "";
+    document.getElementById("modal-start").value = "";
+    document.getElementById("modal-end").value   = "";
+    closeThemeModal();
+    renderThemes();
+}
+
+function exportThemes() {
+    const blob = new Blob([JSON.stringify(S.themes, null, 2)], { type:"application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = "lumina_themes.json"; a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importThemes() {
+    try {
+        const parsed = JSON.parse(document.getElementById("inp-import").value.trim());
+        if (!Array.isArray(parsed)) throw new Error("Must be a JSON array");
+        parsed.forEach(t => {
+            if (typeof t.Begin !== "number" || typeof t.End !== "number" || typeof t.Theme !== "string")
+                throw new Error("Each entry needs Begin (number), End (number), Theme (string)");
+        });
+        S.themes = parsed;
+        localStorage.setItem("lm_themes", JSON.stringify(S.themes));
+        document.getElementById("inp-import").value = "";
+        alert(`Imported ${parsed.length} themes successfully`);
+        renderThemes();
+    } catch(e) { alert("Import failed: " + e.message); }
+}
+
+function escHtml(s) {
+    return String(s)
+        .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ─────────────────────────────────────────────────────────────
+//  STYLES MODAL
+// ─────────────────────────────────────────────────────────────
+function openStylesModal() {
+    renderStyleSelect();
+    renderStyleList();
+    lucide.createIcons();
+    const modal = document.getElementById("styles-modal");
+    modal.classList.remove("hidden");
+    modal.style.display = "flex";
+}
+
+function closeStylesModal() {
+    const modal = document.getElementById("styles-modal");
+    modal.classList.add("hidden");
+    modal.style.display = "";
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  POI MODAL
+// ─────────────────────────────────────────────────────────────
+let _poiEditCity = null;
+let _poiEditIndex = -1;
+
+function openPoiModal() {
+    const modal = document.getElementById("poi-modal");
+    const sel = document.getElementById("poi-city-sel");
+    if (!modal || !sel) {
+        alert("POI UI is missing from the page. Try reloading or resetting the app.");
+        return;
+    }
+    const keys = Object.keys(S.poiCache);
+    const options = [];
+    if (S.currentCity) {
+        const curKey = S.currentCity.toLowerCase().replace(/ /g, "_");
+        const label = `${S.currentCity}${S.currentState ? ", " + S.currentState : ""} (current)`;
+        options.push(`<option value="${curKey}">${escHtml(label)}</option>`);
+        keys.filter(k => k !== curKey).forEach(k => {
+            options.push(`<option value="${k}">${escHtml(k.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase()))}</option>`);
+        });
+    } else {
+        keys.forEach(k => {
+            options.push(`<option value="${k}">${escHtml(k.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase()))}</option>`);
+        });
+    }
+    if (options.length === 0) {
+        sel.innerHTML = "<option value=''>No cached locations yet — generate a wallpaper first</option>";
+        _poiEditCity = null;
+    } else {
+        sel.innerHTML = options.join("");
+        _poiEditCity = sel.value;
+    }
+    closePoiForm();
+    renderPoiList(_poiEditCity);
+    refreshCacheInfoModal();
+
+    modal.classList.remove("hidden");
+    modal.style.display = "flex";
+    lucide.createIcons();
+}
+
+function closePoiModal() {
+    const modal = document.getElementById("poi-modal");
+    modal.classList.add("hidden");
+    modal.style.display = "";
+    closePoiForm();
+}
+
+function poiSelectCity(cityKey) {
+    _poiEditCity = cityKey;
+    closePoiForm();
+    renderPoiList(cityKey);
+}
+
+function renderPoiList(cityKey) {
+    const listEl = document.getElementById("poi-list");
+    const pois = cityKey ? (S.poiCache[cityKey] || []) : [];
+    if (pois.length === 0) {
+        listEl.innerHTML = "<p class=\"text-sm text-gray-400 text-center py-4\">No POIs cached for this location.</p>";
+        return;
+    }
+    listEl.innerHTML = pois.map((poi, i) => `
+        <div class="flex items-start gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-gray-800 truncate">${escHtml(poi.name)}</p>
+                <p class="text-[11px] text-gray-500 mt-0.5 line-clamp-2">${escHtml(poi.description)}</p>
+            </div>
+            <div class="flex gap-1 flex-shrink-0 mt-0.5">
+                <button onclick="openPoiForm(${i})" class="p-1.5 text-blue-400 hover:text-blue-600 active:scale-90 transition-transform">
+                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="deletePoiEntry(${i})" class="p-1.5 text-gray-300 hover:text-red-400 active:scale-90 transition-transform">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+        </div>`).join("");
+    lucide.createIcons();
+}
+
+function openPoiForm(index = -1) {
+    _poiEditIndex = index;
+    const formCard = document.getElementById("poi-form-card");
+    document.getElementById("poi-form-title").textContent = index >= 0 ? "EDIT POI" : "ADD POI";
+    if (index >= 0) {
+        const poi = (S.poiCache[_poiEditCity] || [])[index];
+        if (!poi) return;
+        document.getElementById("poi-form-name").value = poi.name;
+        document.getElementById("poi-form-desc").value = poi.description;
+    } else {
+        document.getElementById("poi-form-name").value = "";
+        document.getElementById("poi-form-desc").value = "";
+    }
+    document.getElementById("poi-img-area").classList.add("hidden");
+    document.getElementById("poi-img-preview").src = "";
+    formCard.classList.remove("hidden");
+    lucide.createIcons();
+    setTimeout(() => formCard.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+}
+
+function closePoiForm() {
+    document.getElementById("poi-form-card").classList.add("hidden");
+    document.getElementById("poi-img-area").classList.add("hidden");
+    _poiEditIndex = -1;
+}
+
+async function lookupPoiDesc() {
+    const name = document.getElementById("poi-form-name").value.trim();
+    if (!name) { alert("Enter a POI name first."); return; }
+    if (!S.apiKey) { alert("Add your Pollinations API key in Settings first."); return; }
+    const cityKey = _poiEditCity || "";
+    const cityLabel = S.currentCity || cityKey.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase()) || "this location";
+    const stateLabel = S.currentState || "";
+    const location = stateLabel ? `${cityLabel}, ${stateLabel}` : cityLabel;
+    const btn = document.getElementById("btn-poi-lookup");
+    const lbl = document.getElementById("poi-lookup-label");
+    const spin = document.getElementById("poi-lookup-spinner");
+    const icon = document.getElementById("poi-lookup-icon");
+    btn.disabled = true; lbl.textContent = "Looking up…";
+    spin.classList.remove("hidden"); icon.classList.add("hidden");
+    try {
+        const sys = `Role: You are a geographic data assistant and an expert of points of interest and other unique and notable places of things views or vistas of requested locations. Provide a "description" of the requested place. Your response must be 1-2 concise sentences that visually describes the named point of interest. Nothing more. If no reliable info is found, respond with a brief reason.`;
+        const usr = `Provide a visual description of "${name}" in or nearby ${location}`.replace(/\//g, ' ');
+        const url = `https://gen.pollinations.ai/text/${encodeURIComponent(usr)}`
+            + `?model=gemini-search`
+            + `&system=${encodeURIComponent(sys)}`
+            + `&temperature=0.2`
+            + `&seed=${Math.floor(Math.random()*999999)}`
+            + `&key=${encodeURIComponent(S.apiKey)}`;
+
+        let res = await fetch(url);
+        let rawDesc = await res.text();
+
+        // Fallback to perplexity-reasoning if first call fails or returns empty
+        if (!res.ok || !rawDesc || rawDesc.trim().length < 5) {
+            console.warn("gemini-search failed for POI description. Falling back to perplexity-reasoning...");
+            const fallbackUrl = `https://gen.pollinations.ai/text/${encodeURIComponent(usr)}`
+                + `?model=perplexity-reasoning`
+                + `&system=${encodeURIComponent(sys)}`
+                + `&temperature=0.2`
+                + `&seed=${Math.floor(Math.random()*999999)}`
+                + `&key=${encodeURIComponent(S.apiKey)}`;
+            res = await fetch(fallbackUrl);
+            rawDesc = await res.text();
+        }
+
+        if (!res.ok) throw new Error(`API returned ${res.status}`);
+        document.getElementById("poi-form-desc").value = rawDesc.trim();
+    } catch(e) {
+        alert("Lookup failed: " + e.message);
+    } finally {
+        btn.disabled = false; lbl.textContent = "Lookup";
+        spin.classList.add("hidden"); icon.classList.remove("hidden");
+        lucide.createIcons();
+    }
+}
+
+async function generatePoiPreview() {
+    const name = document.getElementById("poi-form-name").value.trim();
+    const desc = document.getElementById("poi-form-desc").value.trim();
+    if (!name) { alert("Enter a POI name first."); return; }
+    if (!S.apiKey) { alert("Add your Pollinations API key in Settings first."); return; }
+    const cityKey = _poiEditCity || "";
+    const cityLabel = S.currentCity || cityKey.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase()) || "";
+    const loc = S.currentState ? `${cityLabel}, ${S.currentState}` : cityLabel;
+    const btn = document.getElementById("btn-poi-preview");
+    const lbl = document.getElementById("poi-preview-label");
+    const spin = document.getElementById("poi-preview-spinner");
+    const icon = document.getElementById("poi-preview-icon");
+    btn.disabled = true; lbl.textContent = "Generating…";
+    spin.classList.remove("hidden"); icon.classList.add("hidden");
+    try {
+        const prompt = `${S.style} image of ${name}${loc ? " in "+loc : ""}. ${desc}. Architecturally accurate.`;
+        const safe = sanitizePrompt(prompt);
+        let imgURL = `https://gen.pollinations.ai/image/${encodeURIComponent(safe)}`
+            + `?model=${S.imageModel}&width=640&height=360&nologo=true&private=true`
+            + `&seed=${Math.floor(Math.random()*999999)}`
+            + `&key=${encodeURIComponent(S.apiKey)}`;
+        if (S.imageModel === "gptimage") imgURL += `&quality=medium`;
+        const res = await fetch(imgURL);
+        if (!res.ok) throw new Error(`Image API returned ${res.status}`);
+        const blob = await res.blob();
+        const burl = URL.createObjectURL(blob);
+        document.getElementById("poi-img-preview").src = burl;
+        document.getElementById("poi-img-area").classList.remove("hidden");
+    } catch(e) {
+        alert("Preview failed: " + e.message);
+    } finally {
+        btn.disabled = false; lbl.textContent = "Generate";
+        spin.classList.add("hidden"); icon.classList.remove("hidden");
+        lucide.createIcons();
+    }
+}
+
+
+
+function resetApp() {
+    if (!confirm("Reset Lumina Aeris? This will clear all settings, custom themes, and cached POIs.")) return;
+    Object.keys(localStorage).filter(k => k.startsWith("lm_")).forEach(k => localStorage.removeItem(k));
+    location.reload();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  LOCATION MODE
+// ─────────────────────────────────────────────────────────────
+function setLocationMode(mode) {
+    S.locationMode = mode;
+    localStorage.setItem("lm_location_mode", mode);
+    document.getElementById("locmode-current").className = mode === "current" ?
+        "flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold bg-blue-500 text-white transition-all" :
+        "flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold text-gray-400 transition-all";
+    document.getElementById("locmode-custom").className = mode === "custom" ?
+        "flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold bg-blue-500 text-white transition-all" :
+        "flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold text-gray-400 transition-all";
+    document.getElementById("custom-location-fields").classList.toggle("hidden", mode !== "custom");
+    if (mode === "current") {
+        delete S.customLat; delete S.customLon;
+        localStorage.removeItem("lm_custom_lat");
+        localStorage.removeItem("lm_custom_lon");
+    }
+}
+
+async function validateCustomLocation() {
+    const city = document.getElementById("custom-city").value.trim();
+    const region = document.getElementById("custom-region").value.trim();
+    if (!city || !region) {
+        alert("City and Region/Country are required.");
+        return;
+    }
+    const btn = event.target;
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Validating…";
+    try {
+        const searchRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city+", "+region)}&limit=1&addressdetails=1`);
+        const results = await searchRes.json();
+        if (!results[0]) throw new Error("No results found");
+        const loc = results[0];
+        S.customLat = parseFloat(loc.lat);
+        S.customLon = parseFloat(loc.lon);
+        S.customCity = loc.display_name.split(", ")[0];
+        S.customState = loc.address.state || "";
+        S.customCountry = loc.address.country || "";
+        localStorage.setItem("lm_custom_lat", S.customLat);
+        localStorage.setItem("lm_custom_lon", S.customLon);
+        localStorage.setItem("lm_custom_city", S.customCity);
+        localStorage.setItem("lm_custom_state", S.customState);
+        localStorage.setItem("lm_custom_country", S.customCountry);
+        alert(`✓ Validated: ${S.customCity}, ${S.customState || S.customCountry}`);
+    } catch(e) {
+        alert("Validation failed: " + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+    }
+}
+
+function testImageModel() {
+    if (!S.apiKey) {
+        alert("Add your Pollinations API key first.");
+        return;
+    }
+    const btn = document.getElementById("btn-model-preview");
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<div class="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>';
+    const prompt = `A test image generated by ${S.imageModel} for Lumina Aeris.`;
+    const safe = sanitizePrompt(prompt);
+    const url = `https://gen.pollinations.ai/image/${encodeURIComponent(safe)}?model=${S.imageModel}&width=320&height=180&quality=medium&nologo=true&key=${encodeURIComponent(S.apiKey)}&seed=${Math.floor(Math.random()*999999)}`;
+    fetch(url).then(res => {
+        if (!res.ok) throw new Error(res.status);
+        return res.blob();
+    }).then(blob => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = 320; canvas.height = 180;
+            canvas.getContext("2d").drawImage(img, 0, 0);
+            const a = document.createElement("a");
+            a.href = canvas.toDataURL();
+            a.download = `lumina-model-test-${S.imageModel}.png`;
+            a.click();
+        };
+        img.src = URL.createObjectURL(blob);
+    }).catch(e => alert("Preview failed: " + e.message)).finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+        lucide.createIcons();
+    });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  POI FORM SAVE VALIDATION
+// ─────────────────────────────────────────────────────────────
+function savePoiEntry() {
+    const name = document.getElementById("poi-form-name").value.trim();
+    const desc = document.getElementById("poi-form-desc").value.trim();
+    if (!name) {
+        alert("POI name is required.");
+        document.getElementById("poi-form-name").focus();
+        return;
+    }
+    if (!desc) {
+        alert("POI description is required.");
+        document.getElementById("poi-form-desc").focus();
+        return;
+    }
+    if (!_poiEditCity) {
+        alert("No city selected.");
+        return;
+    }
+    if (!S.poiCache[_poiEditCity]) S.poiCache[_poiEditCity] = [];
+    const pois = S.poiCache[_poiEditCity];
+    if (_poiEditIndex >= 0) {
+        pois[_poiEditIndex] = { name, description: desc };
+    } else {
+        pois.push({ name, description: desc });
+    }
+    localStorage.setItem("lm_poi", JSON.stringify(S.poiCache));
+    closePoiForm();
+    renderPoiList(_poiEditCity);
+    refreshCacheInfoModal();
+}
+
+
+function deletePoiEntry(index) {
+    if (!_poiEditCity || !S.poiCache[_poiEditCity]) return;
+    const poi = S.poiCache[_poiEditCity][index];
+    if (!poi) return;
+    if (!confirm(`Delete "${poi.name}"?`)) return;
+    S.poiCache[_poiEditCity].splice(index, 1);
+    if (S.poiCache[_poiEditCity].length === 0) delete S.poiCache[_poiEditCity];
+    localStorage.setItem("lm_poi", JSON.stringify(S.poiCache));
+    renderPoiList(_poiEditCity);
+    refreshCacheInfoModal();
+    // Re-populate city selector in case city was removed
+    if (!S.poiCache[_poiEditCity]) openPoiModal();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  FETCH IMAGE MODELS DYNAMICALLY
+// ─────────────────────────────────────────────────────────────
+
+async function fetchImageModels() {
+    const sel = document.getElementById("inp-imgmodel");
+    if (!sel) return;
+
+    sel.innerHTML = '<option value="gptimage">Loading models…</option>';
+
+    const fallback = () => {
+        sel.innerHTML = `
+            <option value="gptimage"${S.imageModel === "gptimage" ? " selected" : ""}>GPT Image Mini -- Free, best quality</option>
+            <option value="flux"${S.imageModel === "flux" ? " selected" : ""}>FLUX Schnell -- Fast, free</option>
+            <option value="turbo"${S.imageModel === "turbo" ? " selected" : ""}>Turbo -- Fastest, free</option>`;
+    };
+
+    try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 4000);
+
+        const res = await fetch("https://gen.pollinations.ai/image/models", {
+            signal: ctrl.signal,
+            cache: "no-cache",
+        });
+        clearTimeout(t);
+
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const models = await res.json();
+        if (!Array.isArray(models) || models.length === 0) throw new Error("Empty list");
+
+        const mNames = models.map(m => typeof m === 'object' ? (m.name || m.id || m.value) : m);
+
+        sel.innerHTML = mNames.map(mName =>
+            `<option value="${escHtml(mName)}"${mName === S.imageModel ? " selected" : ""}>${escHtml(mName)}</option>`
+        ).join("");
+
+        if (!mNames.includes(S.imageModel)) {
+            S.imageModel = mNames[0];
+            localStorage.setItem("lm_imgmodel", S.imageModel);
+            sel.value = S.imageModel;
+        }
+    } catch (e) {
+        console.warn("Model list fetch failed:", e);
+        fallback();
+    }
+}
+
+
+
+</script>
+</body>
+</html>
