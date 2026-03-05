@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lumina Aeris</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/lucide@latest" crossorigin="anonymous"></script>
     <style>
         body { background:#f2f2f7; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
         .glass { background:rgba(255,255,255,0.88); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
@@ -112,6 +112,13 @@
 
         html.dark input, html.dark select, html.dark textarea { color:#e5e7eb; }
         html.dark ::placeholder { color:#6b7280; }
+
+
+        html.dark { color-scheme: dark; }
+        html.dark .text-black { color:#f3f4f6 !important; }
+        html.dark .text-gray-800 { color:#e5e7eb !important; }
+        html.dark .text-gray-500 { color:#9ca3af !important; }
+        html.dark .bg-white { background-color:#14141a !important; }
 </style>
 </head>
 <body class="pb-28">
@@ -284,6 +291,8 @@
                     oninput="saveSetting('apiKey','lm_apikey',this.value)"
                     class="w-full bg-gray-50 rounded-xl p-4 text-sm border border-gray-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50">
                     <p class="text-[10px] text-gray-400 mt-1.5">Get yours at <a href="https://enter.pollinations.ai" target="_blank" class="font-bold text-blue-500 hover:underline">enter.pollinations.ai</a></p>
+                    <p id=\"storage-status\" class=\"text-[10px] text-gray-400 mt-1\">Storage: checking…</p>
+                    <p class=\"text-[10px] text-gray-400\">Note: iOS ‘Add to Home Screen’ apps can use a separate storage from Safari; set the API key inside the Home Screen app too.</p>
             </div>
 
             <div>
@@ -334,6 +343,27 @@
           Advanced
         </button>
       </div>
+
+            <div class="ios-card p-5 space-y-4">
+                <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">POI Backup</p>
+
+                <div>
+                    <p class="text-sm text-gray-600 leading-relaxed">Export your cached POIs as JSON or paste JSON to import/restore them.</p>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="exportPoisJSON()" class="flex-1 py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-[0.98] transition-transform">Export POIs JSON</button>
+                    <button onclick="copyPoisJSON()" class="flex-1 py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:scale-[0.98] transition-transform">Copy POIs JSON</button>
+                </div>
+
+                <textarea id="inp-poi-json" rows="6" placeholder="POIs JSON will appear here (or paste JSON to import)…"
+                    class="w-full bg-gray-50 rounded-xl p-3 text-11px font-mono border border-gray-200 outline-none focus:border-blue-400 resize-none"></textarea>
+
+                <button onclick="importPoisJSON()" class="w-full py-3.5 rounded-xl bg-blue-50 text-blue-600 font-semibold text-sm active:scale-[0.98] transition-transform">Import POIs JSON</button>
+
+                <p class="text-[10px] text-gray-400">POIs are stored per location key in lm_poi.</p>
+            </div>
+
             </div>
 
             <div class="ios-card p-5 space-y-4">
@@ -1427,6 +1457,71 @@ function setAppearance(mode) {
     if (mql.addEventListener) mql.addEventListener('change', handler);
     else if (mql.addListener) mql.addListener(handler);
 })();
+
+
+function probeStorage() {
+    try {
+        const k = 'lm__probe__';
+        const v = String(Date.now());
+        lsSet(k, v);
+        const ok = (lsGet(k) === v);
+        lsRemove(k);
+        return ok;
+    } catch (e) {
+        return false;
+    }
+}
+
+function updateStorageStatus() {
+    const el = document.getElementById('storage-status');
+    if (!el) return;
+    const ok = probeStorage();
+    el.textContent = ok ? 'Storage: OK' : 'Storage: blocked (settings will not persist)';
+    el.className = ok ? 'text-[10px] text-green-600 mt-1' : 'text-[10px] text-red-500 mt-1';
+}
+
+function exportPoisJSON() {
+    try {
+        const txt = JSON.stringify(S.poiCache || {}, null, 2);
+        const ta = document.getElementById('inp-poi-json');
+        if (ta) ta.value = txt;
+        const blob = new Blob([txt], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pois.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        console.error(e);
+        alert('Export failed (see console).');
+    }
+}
+
+function copyPoisJSON() {
+    const ta = document.getElementById('inp-poi-json');
+    if (!ta) return;
+    const txt = ta.value || JSON.stringify(S.poiCache || {}, null, 2);
+    ta.value = txt;
+    navigator.clipboard?.writeText(txt).catch(() => {});
+}
+
+function importPoisJSON() {
+    try {
+        const ta = document.getElementById('inp-poi-json');
+        if (!ta || !ta.value.trim()) return;
+        const obj = safeJSONParse(ta.value.trim(), null);
+        if (!obj || typeof obj !== 'object') throw new Error('Invalid JSON');
+        S.poiCache = obj;
+        lsSet('lm_poi', JSON.stringify(obj));
+        alert('POIs imported.');
+    } catch (e) {
+        console.error(e);
+        alert('Import failed: invalid JSON');
+    }
+}
 // ─────────────────────────────────────────────────────────────
 //  INIT
 // ─────────────────────────────────────────────────────────────
@@ -1436,6 +1531,7 @@ function setAppearance(mode) {
     try {
 
     document.getElementById("inp-apikey").value    = S.apiKey;
+    updateStorageStatus();
     document.getElementById("inp-imgmodel").value  = S.imageModel;
     document.getElementById("inp-quality").value   = S.quality;
     document.getElementById("inp-frequency").value = S.frequency;
